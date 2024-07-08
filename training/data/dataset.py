@@ -6,6 +6,7 @@ import torch.utils.data as torch_data
 
 from . import Augmenter
 from . import PatchSampler
+from . import PointCloud
 
 class Dataset(ABC, torch_data.IterableDataset):
     def __init__(
@@ -13,13 +14,15 @@ class Dataset(ABC, torch_data.IterableDataset):
             augmenter: Augmenter,
             patch_sampler: PatchSampler,
             data_path: str,
-            filenames: list[str]
+            filenames: list[str],
+            img_ext: str,
     ):
         self.augmenter: Augmenter = augmenter
         self.patch_sampler: PatchSampler = patch_sampler
         self.index: int = -1
         self.data_path: str = data_path
         self.filenames: list[str] = filenames
+        self.img_ext: str = img_ext
 
     def __len__(self) -> int:
         return len(self.filenames)
@@ -42,5 +45,5 @@ class Dataset(ABC, torch_data.IterableDataset):
         return image_patches, depth_patches, valid_masks, overlap_masks
 
     @abstractmethod
-    def _load(self, index: int) -> tuple[Tensor, Tensor]:
+    def _load(self, index: int) -> tuple[Tensor, PointCloud]:
         ...
