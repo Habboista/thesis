@@ -6,11 +6,15 @@ from torchvision.models import alexnet, AlexNet_Weights
 class Coarse(nn.Module):
     def __init__(self):
         super().__init__()
-        self.model = alexnet(weights=AlexNet_Weights.DEFAULT)
-        self.model.classifier[-1] = nn.Linear(4096, 27*142)
+        self.add_module('backbone',alexnet(weights=AlexNet_Weights.DEFAULT))
+        del self.backbone.classifier[-1]
+        self.head = nn.Linear(4096, 27*142)
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.model(x).reshape(-1, 1, 27, 142)
+        x = self.backbone(x)
+        x = self.head(x)
+        x = x.reshape(-1, 1, 27, 142)
+        return x
 
 class Fine(nn.Module):
     def __init__(self):
@@ -19,8 +23,8 @@ class Fine(nn.Module):
         self.act = nn.ReLU()
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.fine_0_1 = nn.Conv2d(3, 63, 9, stride=2)
-        self.fine_2_3 = nn.Conv2d(64, 64, 5, padding='same', padding_mode='zero')
-        self.fine_3_4 = nn.Conv2d(64, 1, 5, padding='same', padding_mode='zero')
+        self.fine_2_3 = nn.Conv2d(64, 64, 5, padding='same', padding_mode='zeros')
+        self.fine_3_4 = nn.Conv2d(64, 1, 5, padding='same', padding_mode='zeros')
     
     def forward(self, x: Tensor, xx: Tensor) -> Tensor:
         fine_1 = self.pool(self.fine_0_1(x))
@@ -32,7 +36,7 @@ class Fine(nn.Module):
 class CoarseFine(nn.Module):
     def __init__(self):
         super().__init__()
-        self.coarse = Coarse()
+        self.add_module('coarse', Coarse())
         self.fine = Fine()
 
     def forward(self, x: Tensor, only_coarse: bool = False) -> Tensor:
