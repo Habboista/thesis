@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from torch import Tensor
 
-from . import PointCloud
+from ..point_cloud import PointCloud
 
 class PatchSampler(ABC):
     def __init__(self):

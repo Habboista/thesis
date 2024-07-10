@@ -1,6 +1,7 @@
 import os
 import numpy as np
 
+
 def load_velodyne_points(filename: str) -> np.ndarray:
     """Load 3D point cloud from KITTI file format
     (adapted from https://github.com/hunse/kitti)
@@ -9,18 +10,26 @@ def load_velodyne_points(filename: str) -> np.ndarray:
     points[:, 3] = 1.0  # homogeneous
     return points
 
-def read_calib_file(path: str) -> dict[str, np.ndarray]:
+
+def read_calib_file(path):
     """Read KITTI calibration file
-    (modified from https://github.com/hunse/kitti)
+    (from https://github.com/hunse/kitti)
     """
-    data: dict[str, np.ndarray] = dict()
+    float_chars = set("0123456789.e+- ")
+    data = {}
     with open(path, 'r') as f:
         for line in f.readlines():
             key, value = line.split(':', 1)
-            data[key] = np.array(
-                list(map(float, value.strip().split(' '))),
-                dtype=np.float32,
-            )
+            value = value.strip()
+            data[key] = value
+            if float_chars.issuperset(value):
+                # try to cast to float array
+                try:
+                    data[key] = np.array(list(map(float, value.split(' '))))
+                except ValueError:
+                    # casting error: data[key] already eq. value, so pass
+                    pass
+
     return data
 
 def get_projection_matrix(calib_dir: str, cam: int) -> np.ndarray:

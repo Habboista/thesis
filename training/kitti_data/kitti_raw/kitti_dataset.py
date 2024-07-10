@@ -3,17 +3,17 @@ from torch import Tensor
 import torchvision.io as io
 
 from .utils import get_projection_matrix, get_velo_points
-from .. import Dataset
-from .. import PointCloud
+from .abstract_dataset import EigenSplitDataset
+from ..point_cloud import PointCloud
 
-class KITTIRAWDataset(Dataset):
+class KITTIRAWDataset(EigenSplitDataset):
     """KITTI dataset which loads the original velodyne depth maps for ground truth
     """
     def __init__(self, *args, **kwargs):
-        super(Dataset).__init__(*args, **kwargs)
+        super(KITTIRAWDataset, self).__init__(*args, **kwargs)
 
-    def __getitem__(self, index):
-        line = self.filenames[index].split()
+    def _load(self, index):
+        line = self.filenames[index].split(' ')
 
         if len(line) != 3:
             raise ValueError(f"line {index} does not contain 3 fields")
@@ -21,9 +21,11 @@ class KITTIRAWDataset(Dataset):
 
         image = self.get_image(folder, frame_index, side)
         point_cloud = self.get_point_cloud(folder, frame_index, side)
+
+        return image, point_cloud
                 
     def get_image_path(self, folder: str, frame_index: str, side: str) -> str:
-        fn = f"{int(frame_index):010d}{self.img_ext}"
+        fn = f"{int(frame_index):010d}.{self.img_ext}"
 
         image_path = os.path.join(
             self.data_path,
