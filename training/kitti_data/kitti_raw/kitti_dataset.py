@@ -6,12 +6,15 @@ from .utils import get_projection_matrix, get_velo_points
 from .abstract_dataset import EigenSplitDataset
 from ..point_cloud import PointCloud
 
+from timethis import timethis
+
 class KITTIRAWDataset(EigenSplitDataset):
     """KITTI dataset which loads the original velodyne depth maps for ground truth
     """
     def __init__(self, *args, **kwargs):
         super(KITTIRAWDataset, self).__init__(*args, **kwargs)
 
+    @timethis
     def _load(self, index):
         line = self.filenames[index].split(' ')
 

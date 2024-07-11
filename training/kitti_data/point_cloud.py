@@ -1,4 +1,5 @@
 import numpy as np
+from timethis import timethis
 
 class PointCloud:
     def __init__(self, points: np.ndarray, projection_matrix: np.ndarray):
@@ -8,6 +9,7 @@ class PointCloud:
     def copy(self) -> 'PointCloud':
         return PointCloud(self.points, self.projection_matrix.copy())
     
+    @timethis
     def to_depth_map(self, shape: tuple[int, int]) -> np.ndarray:
         # project the points to the image plane
         img_points = (self.points @ self.projection_matrix.T)
@@ -17,11 +19,12 @@ class PointCloud:
         # use minus 1 to get the exact same value as KITTI matlab code
         x = (np.round(img_points[:, 0]) - 1).astype(np.int_)
         y = (np.round(img_points[:, 1]) - 1).astype(np.int_)
+        z = self.points[:, 0]
         valid_inds = (x >= 0) & (y >= 0) & (x < shape[1]) & (y < shape[0])
         
         x = x[valid_inds]
         y = y[valid_inds]
-        z = img_points[valid_inds, 2]
+        z = z[valid_inds]
 
         # draw depth map
         depth: np.ndarray = np.zeros(shape)
@@ -34,6 +37,5 @@ class PointCloud:
         for dd in duplicate_inds:
             pts = np.nonzero(flat_inds == dd)[0]
             depth[y[pts], x[pts]] = z[pts].min()
-        depth[depth < 0] = 0
 
         return depth

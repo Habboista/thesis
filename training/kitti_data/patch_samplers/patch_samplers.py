@@ -6,52 +6,48 @@ import torchvision.transforms.functional as F
 
 from .abstract_patch_sampler import PatchSampler
 from ..point_cloud import PointCloud
-
+from timethis import timethis
 
 class NoPatchSampler(PatchSampler):
     def __init__(self):
         pass
 
-    def __call__(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+    def _call(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         image_shape: tuple[int, int] = (image.shape[-2], image.shape[-1])
         depth_map: Tensor = torch.from_numpy(point_cloud.to_depth_map(image_shape))
         valid_mask: Tensor = (depth_map > 0)
 
-        return image.unsqueeze(0), depth_map.unsqueeze(0), valid_mask.unsqueeze(0), torch.zeros(1, 1, *image_shape)
+        return image[None], depth_map[None, None], valid_mask[None, None], torch.zeros(1, 1, *image_shape)
 
 
 class EigenPatchSampler(PatchSampler):
+    """Reproduces Eigen augmentations, except for color jittering which is in the Augmenter class"""
     def __init__(self, batch_size: int):
         self.batch_size = batch_size
         self.crop_size = (172, 576)
-
-    def __call__(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-        s = random.uniform(0.5, 0.75)
-        flip = random.random() > 0.5
+    @timethis
+    def _call(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        # project point cloud to image
         shape: tuple[int, int] = (image.shape[-2], image.shape[-1])
-        image = F.resize(image, (int(shape[0] * s), int(shape[1] * s)), interpolation=F.InterpolationMode.BILINEAR)
-        image = F.hflip(image) if flip else image
-
-        depth_map: Tensor = torch.from_numpy(point_cloud.to_depth_map(shape)).unsqueeze(0) / s
-        depth_map = F.hflip(depth_map) if flip else depth_map
-        depth_map = F.resize(depth_map, (int(shape[0] * s), int(shape[1] * s)), interpolation=F.InterpolationMode.NEAREST).squeeze(0)
+        depth_map: Tensor = torch.from_numpy(point_cloud.to_depth_map(shape)).unsqueeze(0)
 
         valid_mask: Tensor = (depth_map > 0)
 
-        batched_image: list[Tensor] = []
-        batched_depth_map: list[Tensor] = []
-        batched_valid_mask: list[Tensor] = []
+        # Generate crops
+        image_crops: list[Tensor] = []
+        depth_map_crops: list[Tensor] = []
+        valid_mask_crops: list[Tensor] = []
         for _ in range(self.batch_size):
-            i = random.randint(0, int(s*shape[0]) - self.crop_size[0] - 1)
-            j = random.randint(0, int(s*shape[1]) - self.crop_size[1] - 1)
-
+            i = random.randint(0, image.shape[-2] - self.crop_size[0])
+            j = random.randint(0, image.shape[-1] - self.crop_size[1])
             
-            batched_image.append(image[:, i:i+self.crop_size[0], j:j+self.crop_size[1]])
-            batched_depth_map.append(depth_map[i:i+self.crop_size[0], j:j+self.crop_size[1]])
-            batched_valid_mask.append(valid_mask[i:i+self.crop_size[0], j:j+self.crop_size[1]])
+            image_crops.append(F.crop(image, i, j, *self.crop_size))
+            depth_map_crops.append(F.crop(depth_map, i, j, *self.crop_size))
+            valid_mask_crops.append(F.crop(valid_mask, i, j, *self.crop_size))
 
-        image = torch.stack(batched_image)
-        depth_map = torch.stack(batched_depth_map)
-        valid_mask = torch.stack(batched_valid_mask)
+        # Batch crops
+        image = torch.stack(image_crops)
+        depth_map = torch.stack(depth_map_crops)
+        valid_mask = torch.stack(valid_mask_crops)
 
-        return image, depth_map, valid_mask, torch.zeros(1, 1, *self.crop_size)
+        return image, depth_map, valid_mask, torch.zeros(self.batch_size, self.batch_size, *self.crop_size)

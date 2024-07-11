@@ -16,7 +16,7 @@ def readlines(filename: str) -> list[str]:
         lines = f.read().splitlines()
     return lines
 
-class EigenSplitDataset(ABC, torch_data.IterableDataset):
+class EigenSplitDataset(ABC, torch_data.Dataset):
     """Base class for KITTI dataset. It provides a common interface to the Eigen split of KITTI.
     """
     def __init__(
@@ -29,7 +29,6 @@ class EigenSplitDataset(ABC, torch_data.IterableDataset):
     ):
         self.augmenter: Augmenter = augmenter
         self.patch_sampler: PatchSampler = patch_sampler
-        self.index: int = -1
         self.data_path: str = data_path
 
         match mode:
@@ -47,20 +46,12 @@ class EigenSplitDataset(ABC, torch_data.IterableDataset):
 
     def __len__(self) -> int:
         return len(self.filenames)
-
-    def __iter__(self) -> Iterator:
-        self.index = -1
-        return self
     
-    def __next__(self) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-        if self.index >= len(self):
-            raise StopIteration
-
-        image, point_cloud = self._load(self.index)
+    def __getitem__(self, index) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        image, point_cloud = self._load(index)
         image, point_cloud = self.augmenter(image, point_cloud)
         image_patches, depth_patches, valid_masks, overlap_masks = self.patch_sampler(image, point_cloud)
         
-        self.index += 1
         return image_patches, depth_patches, valid_masks, overlap_masks
 
     @abstractmethod

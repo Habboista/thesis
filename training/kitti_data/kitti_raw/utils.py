@@ -56,6 +56,6 @@ def get_velo_points(velo_filename: str) -> np.ndarray:
     # load velodyne points and remove all behind image plane (approximation)
     # each row of the velodyne data is forward, left, up, reflectance
     velo = load_velodyne_points(velo_filename)
-    velo = velo[velo[:, 0] >= 0, :]
+    velo = velo[velo[:, 0] > 0.27, :]
 
     return velo
