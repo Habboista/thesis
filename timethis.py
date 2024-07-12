@@ -1,6 +1,7 @@
 import time
 import os
 
+ENABLE = False
 
 class Singleton(type):
     _instances = {}
@@ -65,7 +66,6 @@ class TimingInfo(metaclass=Singleton):
             self.print_statistics()
             self.t = now
 
-
 def timethis(func, timing_info=TimingInfo()):
     """Function decorator: time the function and keeps track of timing statistics"""
     def wrapper(*args, **kwargs):
@@ -76,4 +76,4 @@ def timethis(func, timing_info=TimingInfo()):
         timing_info.periodic_print()
         return res
 
-    return wrapper
+    return wrapper if ENABLE else func

@@ -2,7 +2,7 @@ import os
 from torch import Tensor
 import torchvision.io as io
 
-from .utils import get_projection_matrix, get_velo_points
+from .utils import get_camera_info, get_velo_points
 from .abstract_dataset import EigenSplitDataset
 from ..point_cloud import PointCloud
 
@@ -58,7 +58,7 @@ class KITTIRAWDataset(EigenSplitDataset):
 
         point_cloud = PointCloud(
             get_velo_points(velo_filename),
-            get_projection_matrix(calib_path, 2 if side == "l" else 3),
+            get_camera_info(calib_path, 2 if side == "l" else 3),
         )
 
         return point_cloud

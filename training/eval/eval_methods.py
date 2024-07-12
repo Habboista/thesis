@@ -5,29 +5,39 @@ import torchvision.transforms.functional as F
 from tqdm import tqdm
 
 from ..models.abstract_model import AbstractModel
+from ..kitti_data.kitti_raw.kitti_dataset import KITTIRAWDataset
 from timethis import timethis
 
 @timethis
-def compute_depth_errors(gt_depth: Tensor, pred_depth: Tensor) -> dict[str, float]:
+def get_metrics(gt_depth: Tensor, pred_depth: Tensor) -> dict[str, float]:
+    # Mask out of range depth values (following Eigen et al.)
     MIN_DEPTH = 1e-3
     MAX_DEPTH = 80
     mask = (gt_depth > MIN_DEPTH) & (gt_depth < MAX_DEPTH)
 
+    # Evaluate only center crop (following Eigen et al.)
     gt_height, gt_width = gt_depth.shape[-2:]
     crop = [int(0.40810811 * gt_height), int(0.99189189 * gt_height),
             int(0.03594771 * gt_width),  int(0.96405229 * gt_width)]
-    crop_mask = torch.zeros_like(mask)
-    crop_mask[crop[0]:crop[1], crop[2]:crop[3]] = 1
+    crop_mask = torch.zeros_like(mask, dtype=torch.bool)
+    crop_mask[..., crop[0]:crop[1], crop[2]:crop[3]] = True
     mask = mask & crop_mask
 
+    # Flatten selected values
     pred_depth = pred_depth[mask]
     gt_depth = gt_depth[mask]
 
-    return compute_errors(gt_depth, pred_depth)
+    # Align depth predictions with ground truth
+    # TODO
 
-def compute_errors(gt: Tensor, pred: Tensor) -> dict[str, float]:
+    return compute_metrics(gt_depth, pred_depth)
+
+def compute_metrics(gt: Tensor, pred: Tensor) -> dict[str, float]:
     """Computation of error metrics between predicted and ground truth depths
     """
+    if gt.shape != pred.shape:
+        raise ValueError(f"gt and pred must have the same shape, got {gt.shape} and {pred.shape}")
+    
     default_accuracy = 0.
     default_error = float('inf')
     if pred.numel() == 0:
@@ -46,9 +56,9 @@ def compute_errors(gt: Tensor, pred: Tensor) -> dict[str, float]:
     mask_a1 = (thresh < 1.25)
     mask_a2 = (thresh < 1.25 ** 2)
     mask_a3 = (thresh < 1.25 ** 3)
-    a2 = (mask_a2.mean().item() if mask_a2.any() else default_accuracy)
-    a3 = (mask_a3.mean().item() if mask_a3.any() else default_accuracy)
-    a1 = (mask_a1.mean().item() if mask_a1.any() else default_accuracy)
+    a1 = (mask_a1.mean(dtype=torch.float).item() if mask_a1.any() else default_accuracy)
+    a2 = (mask_a2.mean(dtype=torch.float).item() if mask_a2.any() else default_accuracy)
+    a3 = (mask_a3.mean(dtype=torch.float).item() if mask_a3.any() else default_accuracy)
 
     rmse = (gt - pred) ** 2
     rmse = torch.sqrt(rmse.mean()).item()
@@ -62,18 +72,27 @@ def compute_errors(gt: Tensor, pred: Tensor) -> dict[str, float]:
 
     d = torch.log(gt) - torch.log(pred)
     si_err = torch.mean(d**2) - torch.mean(d) ** 2
-    return {'a1': a1, 'a2': a2, 'a3': a3, 'abs_rel': abs_rel, 'sq_rel': sq_rel, 'rmse': rmse, 'rmse_log': rmse_log, 'si_err': si_err}
+    return {
+        'a1': a1,
+        'a2': a2,
+        'a3': a3,
+        'abs_rel': abs_rel,
+        'sq_rel': sq_rel,
+        'rmse': rmse,
+        'rmse_log': rmse_log,
+        'si_err': si_err
+    }
 
 def eval(
-        model: AbstractModel,
-        loader: torch.utils.data.DataLoader,
+        model: nn.Module,
+        dataset: KITTIRAWDataset,
 ) -> dict[str, float]:
     model.to('cuda')
     model.eval()
     print("Validating...")
     with torch.no_grad():
         errors = []
-        for image, depth_map, valid_mask, overlap_mask in tqdm(loader):
+        for image, depth_map in tqdm(dataset):
             # convert to cuda
             image = image.to('cuda')
             depth_map = depth_map.to('cuda')
@@ -81,13 +100,15 @@ def eval(
             # inputs have two leading batching dimensions
             image = image.reshape(-1, *image.shape[2:])
             depth_map = depth_map.reshape(-1, *depth_map.shape[2:])
-            valid_mask = valid_mask.reshape(-1, *valid_mask.shape[2:])
 
             # predict
             pred = model(image)
-            pred = F.resize(pred, depth_map.shape[-2:], interpolation=F.InterpolationMode.BILINEAR)
         
-            errors.append(compute_depth_errors(depth_map, torch.exp(pred)))
-            
-    result: dict[str, float] = {k: torch.tensor([e[k] for e in errors]).mean().item() for k in errors[0].keys()}
+            errors.append(get_metrics(depth_map, torch.exp(pred)))
+
+    # Average metrics     
+    result: dict[str, float] = {
+        k: torch.tensor([e[k] for e in errors]).mean().item()
+        for k in errors[0].keys()
+    }
     return result

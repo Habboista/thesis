@@ -27,15 +27,16 @@ class EigenAugmenter(Augmenter):
         # Horizontal Flip
         flip = random.random() > 0.5
         if flip:
-            point_cloud.points[:, 1] *= -1
+            #point_cloud.points[:, 1] *= -1
+            point_cloud.camera_info['K'][0, 0] *= -1
+            point_cloud.camera_info['K'][0, 2] = point_cloud.camera_info['im_shape'][1] - point_cloud.camera_info['K'][0, 2]
             image = F.hflip(image)
         
         # Scaling
         s = random.uniform(0.5, 0.75)
         resized_shape: tuple[int, int] = (int(image.shape[-2] * s), int(image.shape[-1] * s))
         image = F.resize(image, resized_shape)
-
-        point_cloud.points[:, 0] = (point_cloud.points[:, 0] - 0.27) / s + 0.27
-        point_cloud.projection_matrix = np.diag([s, s, 1.]) @ point_cloud.projection_matrix
+        point_cloud.camera_info['K'] = np.diag([s, s, 1.]) @ point_cloud.camera_info['K']
+        point_cloud.camera_info['im_shape'] = np.array(resized_shape)
 
         return image, point_cloud

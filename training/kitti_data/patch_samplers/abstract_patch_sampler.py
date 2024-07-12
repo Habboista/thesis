@@ -20,7 +20,7 @@ class PatchSampler(ABC):
         if image.shape[0] != 3:
             raise ValueError(f"image must be a 3D tensor of shape 3 x H x W, got {image.shape}")
 
-    def _check_outputs(self, image: Tensor, depth_map: Tensor, valid_mask: Tensor, overlap_mask: Tensor):
+    def _check_outputs(self, image: Tensor, depth_map: Tensor):
         if len(image.shape) != 4:
             raise ValueError(f"image must be a 4D tensor of shape B x 3 x H x W, got {image.shape}")
         if image.shape[1] != 3:
@@ -31,16 +31,11 @@ class PatchSampler(ABC):
         if depth_map.shape[1] != 1:
             raise ValueError(f"depth_map must be a 4D tensor of shape B x 1 x H x W, got {depth_map.shape}")
 
-        if len(valid_mask.shape) != 4:
-            raise ValueError(f"valid_mask must be a 4D tensor of shape B x 1 x H x W, got {valid_mask.shape}")
-        if valid_mask.shape[1] != 1:
-            raise ValueError(f"valid_mask must be a 4D tensor of shape B x 1 x H x W, got {valid_mask.shape}")
-
     @abstractmethod
-    def _call(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+    def _call(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, Tensor]:
         ...
 
-    def __call__(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+    def __call__(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, Tensor]:
         self._check_inputs(image, point_cloud)
         result = self._call(image, point_cloud)
         self._check_outputs(*result)

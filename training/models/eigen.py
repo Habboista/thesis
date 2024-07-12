@@ -40,10 +40,11 @@ class Fine(nn.Module):
 class CoarseFine(nn.Module):
     def __init__(self):
         super().__init__()
-        super().add_module('coarse', Coarse())
-        super().add_module('fine', Fine())
+        self.add_module('coarse', Coarse())
+        self.add_module('fine', Fine())
 
     def forward(self, x: Tensor) -> Tensor:
         coarse_map = self.coarse(x)
         fine_map = self.fine(x, coarse_map)
+        fine_map = nn.functional.interpolate(fine_map, size=x.shape[-2:], mode='bilinear')
         return fine_map
