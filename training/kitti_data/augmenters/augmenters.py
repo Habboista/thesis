@@ -32,11 +32,25 @@ class EigenAugmenter(Augmenter):
             point_cloud.camera_info['K'][0, 2] = point_cloud.camera_info['im_shape'][1] - point_cloud.camera_info['K'][0, 2]
             image = F.hflip(image)
         
-        # Scaling
-        s = random.uniform(0.5, 0.6)
-        resized_shape: tuple[int, int] = (int(image.shape[-2] * s), int(image.shape[-1] * s))
+        # Scaling by s and downsampling by half
+        # the reason is that if all the scaling is due to the point cloud
+        # then the depth range is too large
+        # the focal length of the matrix is consistent across samples
+        
+        # Scaling by s is due to point cloud
+        s = random.uniform(1., 1.2)
+        point_cloud.points[:, 0] /= s
+
+        # The downsampling by half is due to the camera focal length
+        point_cloud.camera_info['K'] = np.diag([0.5, 0.5, 1.]) @ point_cloud.camera_info['K']
+
+        resized_shape: tuple[int, int] = (int(image.shape[-2] * s / 2), int(image.shape[-1] * s / 2))
         image = F.resize(image, resized_shape)
-        point_cloud.camera_info['K'] = np.diag([s, s, 1.]) @ point_cloud.camera_info['K']
+
+        # Adjust image size
+        point_cloud.camera_info['K'][0, 2] *= s
+        point_cloud.camera_info['K'][1, 2] *= s
+
         point_cloud.camera_info['im_shape'] = np.array(resized_shape)
 
         return image, point_cloud
