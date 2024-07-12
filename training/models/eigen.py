@@ -31,7 +31,7 @@ class Fine(nn.Module):
     
     def forward(self, x: Tensor, coarse_map: Tensor) -> Tensor:
         fine_1 = self.pool(self.fine_0_1(x))
-        fine_1 = nn.functional.interpolate(fine_1, size=coarse_map.shape[-2:], mode='bilinear')
+        fine_1 = nn.functional.interpolate(fine_1, size=coarse_map.shape[-2:], mode='nearest')
         fine_2 = self.act(torch.cat((fine_1, coarse_map), dim=-3))
         fine_3 = self.act(self.fine_2_3(fine_2))
         fine_4 = self.fine_3_4(fine_3)
@@ -46,5 +46,5 @@ class CoarseFine(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         coarse_map = self.coarse(x)
         fine_map = self.fine(x, coarse_map)
-        fine_map = nn.functional.interpolate(fine_map, size=x.shape[-2:], mode='bilinear')
+        fine_map = nn.functional.interpolate(fine_map, size=x.shape[-2:], mode='nearest')
         return fine_map

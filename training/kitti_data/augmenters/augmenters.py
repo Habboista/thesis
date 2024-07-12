@@ -33,7 +33,7 @@ class EigenAugmenter(Augmenter):
             image = F.hflip(image)
         
         # Scaling
-        s = random.uniform(0.5, 0.75)
+        s = random.uniform(0.5, 0.6)
         resized_shape: tuple[int, int] = (int(image.shape[-2] * s), int(image.shape[-1] * s))
         image = F.resize(image, resized_shape)
         point_cloud.camera_info['K'] = np.diag([s, s, 1.]) @ point_cloud.camera_info['K']
