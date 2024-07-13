@@ -26,16 +26,13 @@ class TestPatchSampler(PatchSampler):
         # project point cloud to image
         depth_map: Tensor = point_cloud.to_depth_map()
 
-        # Generate crops
-        ii = random.choices(range(image.shape[-2] - self.crop_size[0] + 1), k=self.batch_size)
-        jj = random.choices(range(image.shape[-1] - self.crop_size[1] + 1), k=self.batch_size)
+        # Generate center crop
+        image = F.center_crop(image, self.crop_size)
+        depth_map = F.center_crop(depth_map, self.crop_size)
 
-        image_crops = [F.crop(image, i, j, *self.crop_size) for i, j in zip(ii, jj)]
-        depth_map_crops = [F.crop(depth_map, i, j, *self.crop_size) for i, j in zip(ii, jj)]
-
-        # Batch crops
-        image = torch.stack(image_crops)
-        depth_map = torch.stack(depth_map_crops)
+        # Batch output
+        image = image.unsqueeze(0)
+        depth_map = depth_map.unsqueeze(0)
 
         return image, depth_map
     

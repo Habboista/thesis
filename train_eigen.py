@@ -12,9 +12,13 @@ from training.models.eigen import CoarseFine
 from training.eval import eval
 from training.losses.scale_invariant import ScaleInvariantLoss
 from training.kitti_data.kitti_raw.kitti_dataset import KITTIRAWDataset
+
 from training.kitti_data.augmenters import NoAugmenter
+from training.kitti_data.augmenters import TestAugmenter
 from training.kitti_data.augmenters import EigenAugmenter
+
 from training.kitti_data.patch_samplers import EigenPatchSampler
+from training.kitti_data.patch_samplers import TestPatchSampler
 from training.kitti_data.patch_samplers import NoPatchSampler
 
 def train(
@@ -87,8 +91,8 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True)
 
     val_set = KITTIRAWDataset(
-        NoAugmenter(),
-        NoPatchSampler(),
+        TestAugmenter(),
+        TestPatchSampler(),
         '/media/antonio/523f31c5-dc82-4dce-8457-65b5dd1f19e4/kitti',
         'val',
         'png',
