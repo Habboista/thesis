@@ -35,11 +35,16 @@ class Info:
                 self.plot()
 
     def plot(self) -> None:
-        for k, v in self.info[-1].items():
-            plt.plot(v)
+        data: dict[str, list[float]] = {k: [] for k in self.info[-1].keys()}
+        for epoch in self.info:
+            for k, v in epoch.items():
+                data[k].extend(v)
+        for k, v in data.items():
             plt.title(k)
-            plt.show()
-            
+            plt.plot(v)
+            plt.savefig(os.path.join(self.dir_path, f'{k}.png'))
+            plt.close()
+
     def average_epoch(self, epoch:int, key: str) -> float:
         if len(self.info[epoch][key]) == 0:
             return 0.

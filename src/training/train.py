@@ -16,12 +16,7 @@ def train(
     ) -> None:
 
     model.train()
-    k = 0
     for image, depth_map in tqdm(train_loader):
-        if k > 1:
-            break
-        k += 1
-
         optimizer.zero_grad()
 
         # convert to cuda

@@ -1,3 +1,5 @@
+# TODO: remove
+
 from abc import ABC, abstractmethod
 
 from torch import Tensor
@@ -5,6 +7,7 @@ from torch.nn import Module
 
 class AbstractModel(ABC):
     """Base class for all models. It ensures input and output format."""
+
     def __init__(self):
         ...
 

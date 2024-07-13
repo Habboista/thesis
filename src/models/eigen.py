@@ -1,22 +1,23 @@
 import torch
 from torch import Tensor
 import torch.nn as nn
-from torchvision.models import alexnet, AlexNet_Weights
-
-from .abstract_model import AbstractModel
+import torchvision.models as torch_models
 
 class Coarse(nn.Module):
-    def __init__(self, size=(27, 142)):
+    def __init__(self, out_size: tuple[int, int]):
         super().__init__()
-        self.size = size
-        self.add_module('backbone',alexnet(weights=AlexNet_Weights.DEFAULT))
+        self.out_size = out_size
+        self.add_module(
+            'backbone',
+            torch_models.alexnet(weights=torch_models.AlexNet_Weights.DEFAULT)
+        )
         del self.backbone.classifier[-1]
-        self.add_module('head', nn.Linear(4096, size[0] * size[1]))
+        self.add_module('head', nn.Linear(4096, out_size[0] * out_size[1]))
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.backbone(x)
         x = self.head(x)
-        x = x.reshape(-1, 1, self.size[0], self.size[1])
+        x = x.reshape(-1, 1, self.out_size[0], self.out_size[1])
         return x
 
 class Fine(nn.Module):
@@ -38,12 +39,13 @@ class Fine(nn.Module):
         return fine_4
 
 class CoarseFine(nn.Module):
-    def __init__(self):
+    def __init__(self, coarse_size: tuple[int, int]=(27, 142)):
         super().__init__()
-        self.add_module('coarse', Coarse())
+        self.add_module('coarse', Coarse(coarse_size))
         self.add_module('fine', Fine())
 
     def forward(self, x: Tensor) -> Tensor:
+        x = 2* (x - 0.5)
         coarse_map = self.coarse(x)
         fine_map = self.fine(x, coarse_map)
         fine_map = nn.functional.interpolate(fine_map, size=x.shape[-2:], mode='nearest')

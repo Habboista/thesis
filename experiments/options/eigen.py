@@ -27,7 +27,7 @@ __all__ = [
 # Setup options
 kitti_path = '/media/antonio/523f31c5-dc82-4dce-8457-65b5dd1f19e4/kitti'
 kitti_ext = 'png'
-experiment_name = __name__
+experiment_name = __name__.split('.')[-1]
 
 # Training options
 num_epochs = 10
