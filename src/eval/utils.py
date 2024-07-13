@@ -1,11 +1,6 @@
 import torch
 from torch import Tensor
-import torch.nn as nn
-import torchvision.transforms.functional as F
-from tqdm import tqdm
 
-from ..models.abstract_model import AbstractModel
-from ..kitti_data.kitti_raw.kitti_dataset import KITTIRAWDataset
 from timethis import timethis
 
 @timethis
@@ -56,22 +51,22 @@ def compute_metrics(gt: Tensor, pred: Tensor) -> dict[str, float]:
     mask_a1 = (thresh < 1.25)
     mask_a2 = (thresh < 1.25 ** 2)
     mask_a3 = (thresh < 1.25 ** 3)
-    a1 = (mask_a1.mean(dtype=torch.float).item() if mask_a1.any() else default_accuracy)
-    a2 = (mask_a2.mean(dtype=torch.float).item() if mask_a2.any() else default_accuracy)
-    a3 = (mask_a3.mean(dtype=torch.float).item() if mask_a3.any() else default_accuracy)
+    a1 = (mask_a1.mean(dtype=torch.float).cpu().item() if mask_a1.any() else default_accuracy)
+    a2 = (mask_a2.mean(dtype=torch.float).cpu().item() if mask_a2.any() else default_accuracy)
+    a3 = (mask_a3.mean(dtype=torch.float).cpu().item() if mask_a3.any() else default_accuracy)
 
     rmse = (gt - pred) ** 2
-    rmse = torch.sqrt(rmse.mean()).item()
+    rmse = torch.sqrt(rmse.mean()).cpu().item()
 
     rmse_log = (torch.log(gt) - torch.log(pred)) ** 2
-    rmse_log = torch.sqrt(rmse_log.mean()).item()
+    rmse_log = torch.sqrt(rmse_log.mean()).cpu().item()
 
-    abs_rel = torch.mean(torch.abs(gt - pred) / gt).item()
+    abs_rel = torch.mean(torch.abs(gt - pred) / gt).cpu().item()
 
-    sq_rel = torch.mean(((gt - pred) ** 2) / gt).item()
+    sq_rel = torch.mean(((gt - pred) ** 2) / gt).cpu().item()
 
     d = torch.log(gt) - torch.log(pred)
-    si_err = torch.mean(d**2) - torch.mean(d) ** 2
+    si_err = (torch.mean(d**2) - torch.mean(d)**2).cpu().item()
     return {
         'a1': a1,
         'a2': a2,
@@ -80,35 +75,5 @@ def compute_metrics(gt: Tensor, pred: Tensor) -> dict[str, float]:
         'sq_rel': sq_rel,
         'rmse': rmse,
         'rmse_log': rmse_log,
-        'si_err': si_err
+        'si_err': si_err,
     }
-
-def eval(
-        model: nn.Module,
-        dataset: KITTIRAWDataset,
-) -> dict[str, float]:
-    model.to('cuda')
-    model.eval()
-    print("Validating...")
-    with torch.no_grad():
-        errors = []
-        for image, depth_map in tqdm(dataset):
-            # convert to cuda
-            image = image.to('cuda')
-            depth_map = depth_map.to('cuda')
-
-            # inputs have two leading batching dimensions
-            image = image.reshape(-1, *image.shape[2:])
-            depth_map = depth_map.reshape(-1, *depth_map.shape[2:])
-
-            # predict
-            pred = model(image)
-        
-            errors.append(get_metrics(depth_map, torch.exp(pred)))
-
-    # Average metrics     
-    result: dict[str, float] = {
-        k: torch.tensor([e[k] for e in errors]).mean().item()
-        for k in errors[0].keys()
-    }
-    return result
