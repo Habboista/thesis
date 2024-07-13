@@ -8,6 +8,10 @@ class MyModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.base_model = CoarseFine(coarse_size=(150, 150))
+    
+    def to(self, device):
+        """It does nothing. Always working with CUDA."""
+        pass
 
     def forward(self, x: Tensor) -> Tensor:
         if self.training:
