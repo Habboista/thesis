@@ -1,13 +1,13 @@
 from src.models.eigen import CoarseFine
 from src.losses import ScaleInvariantLoss
 
-from src.kitti_data.augmenters import NoAugmenter
-from src.kitti_data.augmenters import TestAugmenter
-from src.kitti_data.augmenters import EigenAugmenter
+from src.data.augmenters import NoAugmenter
+from src.data.augmenters import TestAugmenter
+from src.data.augmenters import EigenAugmenter
 
-from src.kitti_data.patch_samplers import EigenPatchSampler
-from src.kitti_data.patch_samplers import TestPatchSampler
-from src.kitti_data.patch_samplers import NoPatchSampler
+from src.data.patch_samplers import EigenPatchSampler
+from src.data.patch_samplers import TestPatchSampler
+from src.data.patch_samplers import NoPatchSampler
 
 __all__ = [
     'kitti_path',

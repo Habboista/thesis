@@ -8,7 +8,7 @@ import torch.utils.data as data
 from ..info import Info
 from .train import train
 from ..eval import eval
-from ..kitti_data.kitti_raw import KITTIRAWDataset
+from ..data.kitti_raw import KITTIRAWDataset
 
 def train_cycle(
     model: nn.Module,
@@ -41,6 +41,6 @@ def train_cycle(
 
         # Save checkpoint
         print("Saving checkpoint...")
-        torch.save(model.state_dict(), os.path.join(checkpoints_dir, f'best_model_{epoch}.pth'))
+        torch.save(model.state_dict(), os.path.join(checkpoints_dir, f'model_{epoch}.pth'))
         training_info.save_epoch(epoch, f'training_info_{epoch}.json')
         val_info.save_epoch(epoch, f'val_info_{epoch}.json')

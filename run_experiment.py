@@ -3,7 +3,7 @@ import os
 import torch
 
 from src.training import train_cycle
-from src.kitti_data.kitti_raw.kitti_dataset import KITTIRAWDataset
+from src.data.kitti_raw import KITTIRAWDataset
 from src.info import Info
 
 ###########################################

@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from .utils import get_metrics
 from ..info import Info
-from ..kitti_data.kitti_raw import KITTIRAWDataset
+from ..data.kitti_raw import KITTIRAWDataset
 from timethis import timethis
 
 def eval(
