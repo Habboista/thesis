@@ -1,1 +1,2 @@
 from .scale_invariant import ScaleInvariantLoss
+from .weighted_scale_invariant import WeightedScaleInvariantLoss

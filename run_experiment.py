@@ -6,10 +6,10 @@ from src.training import train_cycle
 from src.data.kitti_raw import KITTIRAWDataset
 from src.info import Info
 
-###########################################
-#           EXPERIMENT OPTIONS            #
-from experiments.options.eigen import *
-###########################################
+########################################################
+#                   EXPERIMENT OPTIONS                 #
+from experiments.options.debug_experiment import *
+########################################################
 
 def main():
     global \

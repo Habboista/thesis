@@ -31,7 +31,12 @@ def blur(image: Tensor) -> Tensor:
     return blur
 
 def get_blur_weight_mask(image: Tensor) -> Tensor:
-    mask = torch.ones_like(image, dtype=torch.float) * 0.1
+    assert len(image.shape) >= 3, f"Expected image of size ... x 3 x H x W, got {image.shape}"
+    assert image.shape[-3] == 3,  f"Expected image of size ... x 3 x H x W, got {image.shape}"
+
+    shape = tuple(image.shape)
+    shape = tuple(shape[:-3]) + (1,) + tuple(shape[-2:])
+    mask = torch.ones(*shape, dtype=torch.float) * 0.1
 
     i1 = image.shape[-2] // 6
     j1 = image.shape[-1] // 6

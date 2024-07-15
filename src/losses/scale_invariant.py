@@ -12,6 +12,3 @@ class ScaleInvariantLoss(nn.Module):
         """
         d = x - y
         return torch.mean(d**2) - 0.5 * torch.mean(d)**2
-    
-class MiDASLoss(nn.Module):
-    pass
