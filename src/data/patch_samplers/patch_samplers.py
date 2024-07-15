@@ -6,6 +6,7 @@ from torch import Tensor
 import torchvision.transforms.functional as F
 
 from .abstract_patch_sampler import PatchSampler
+from .utils import blur
 from ..point_cloud import PointCloud
 from timethis import timethis
 
@@ -41,7 +42,10 @@ class RotatedPatchSampler(PatchSampler):
         p2 = 0.9
         x = random.randrange(int(p1 * image.shape[-1]), int(p2 * image.shape[-1]))
         y = random.randrange(int(p1 * image.shape[-2]), int(p2 * image.shape[-2]))
-        
+
+        return self.warp(image, point_cloud, x, y)
+    
+    def warp(self, image: Tensor, point_cloud: PointCloud, x: int, y: int) -> tuple[Tensor, Tensor]:
         # Compute angles of rotation
         alpha_x = point_cloud.camera_info['K'][0, 0]
         alpha_y = point_cloud.camera_info['K'][1, 1]
@@ -94,6 +98,7 @@ class RotatedPatchSampler(PatchSampler):
         
         return warped, depth_map
 
+
 class TestPatchSampler(PatchSampler):
     def __init__(self):
         self.crop_size = (172, 576)
@@ -102,7 +107,7 @@ class TestPatchSampler(PatchSampler):
         # project point cloud to image
         depth_map: Tensor = point_cloud.to_depth_map()
 
-        # Generate center crop
+        # Generate center crop # TODO crop around central point
         image = F.center_crop(image, self.crop_size)
         depth_map = F.center_crop(depth_map, self.crop_size)
 
