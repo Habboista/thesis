@@ -48,14 +48,31 @@ class EigenSplitDataset(torch_data.Dataset, ABC):
         return len(self.filenames)
     
     def __getitem__(self, index) -> tuple[Tensor, Tensor]:
-        image, point_cloud = self._load(index)
-        print(point_cloud.points.shape)
+        image: Tensor
+        point_cloud: Tensor
+        camera_parameters: dict[str, Tensor]
+
+        image, point_cloud, camera_parameters = self._load(index)
         image, point_cloud = self.augmenter(image, point_cloud)
         image_patches, depth_patches = self.patch_sampler(image, point_cloud)
         
         return image_patches, depth_patches
 
     @abstractmethod
-    def _load(self, index: int) -> tuple[Tensor, PointCloud]:
-        """Load an image and corresponding point cloud from file"""
+    def _load(self, index: int) -> tuple[Tensor, Tensor, dict[str, Tensor]]:
+        """Load an image and corresponding point cloud and camera parameters from file.
+        
+        Args:
+            index: index of the image in the dataset
+        
+        Returns:
+            image as Tensor 3 x H x W
+            point cloud as Tensor N x 4
+            camera parameters as dict of Tensors, precisely:
+            {
+                "K": Tensor 3 x 3,
+                "[R | t]": Tensor 3 x 4,
+                "image_size": Tensor (2,)
+            }
+        """
         ...

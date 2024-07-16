@@ -7,5 +7,5 @@ class Augmenter(ABC):
     def __init__(self):
         ...
     @abstractmethod
-    def __call__(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, PointCloud]:
+    def __call__(self, image: Tensor, point_cloud: Tensor, camera_parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor, dict[str, Tensor]]:
         ...
