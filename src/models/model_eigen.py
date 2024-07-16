@@ -3,6 +3,8 @@ from torch import Tensor
 import torch.nn as nn
 import torchvision.models as torch_models
 
+from ._model_abstract import Model
+
 class Coarse(nn.Module):
     def __init__(self, out_size: tuple[int, int]):
         super().__init__()
@@ -38,15 +40,15 @@ class Fine(nn.Module):
         fine_4 = self.fine_3_4(fine_3)
         return fine_4
 
-class CoarseFine(nn.Module):
+class CoarseFine(Model):
     def __init__(self, coarse_size: tuple[int, int]=(27, 142)):
         super().__init__()
-        self.add_module('coarse', Coarse(coarse_size))
-        self.add_module('fine', Fine())
+        self.coarse = Coarse(coarse_size)
+        self.fine = Fine()
 
-    def forward(self, x: Tensor) -> Tensor:
+    def _forward(self, x: Tensor) -> Tensor:
         x = 2* (x - 0.5)
         coarse_map = self.coarse(x)
         fine_map = self.fine(x, coarse_map)
         fine_map = nn.functional.interpolate(fine_map, size=x.shape[-2:], mode='nearest')
-        return fine_map
+        return torch.exp(fine_map)

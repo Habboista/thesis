@@ -1,15 +1,16 @@
-# TODO: remove
-
 from abc import ABC, abstractmethod
 
 from torch import Tensor
 from torch.nn import Module
 
-class AbstractModel(ABC):
+class Model(Module, ABC):
     """Base class for all models. It ensures input and output format."""
 
     def __init__(self):
-        ...
+        super().__init__()
+
+    def __setattr__(self, name: str, value: Tensor | Module) -> None:
+        return super().__setattr__(name, value)
 
     @abstractmethod
     def _forward(self, image: Tensor) -> Tensor:
@@ -33,12 +34,10 @@ class AbstractModel(ABC):
             raise ValueError(f"result must be a 4D tensor of shape {self.output_shape}, got {result.shape}")
         if result.shape != self.output_shape:
             raise ValueError(f"result must be a 4D tensor of shape {self.output_shape}, got {result.shape}")
+        assert result.min() > 0., f"Expected result to be strictly positive, but its minimum value is {result.min()}"
         
     def forward(self, image: Tensor) -> Tensor:
         self._check_inputs(image)
         result = self._forward(image)
         self._check_outputs(result)
         return result
-    
-    def __call__(self, image: Tensor) -> Tensor:
-        return self.forward(image)

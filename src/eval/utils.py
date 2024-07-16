@@ -4,7 +4,7 @@ from torch import Tensor
 from timethis import timethis
 
 @timethis
-def get_metrics(gt_depth: Tensor, pred_depth: Tensor) -> dict[str, float]:
+def get_metrics(pred_depth: Tensor, gt_depth: Tensor) -> dict[str, float]:
     # Mask out of range depth values (following Eigen et al.)
     MIN_DEPTH = 1e-3
     MAX_DEPTH = 80
@@ -25,9 +25,9 @@ def get_metrics(gt_depth: Tensor, pred_depth: Tensor) -> dict[str, float]:
     # Align depth predictions with ground truth
     # TODO
 
-    return compute_metrics(gt_depth, pred_depth)
+    return compute_metrics(pred_depth, gt_depth)
 
-def compute_metrics(gt: Tensor, pred: Tensor) -> dict[str, float]:
+def compute_metrics(pred: Tensor, gt: Tensor) -> dict[str, float]:
     """Computation of error metrics between predicted and ground truth depths
     """
     if gt.shape != pred.shape:

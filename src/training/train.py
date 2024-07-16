@@ -37,8 +37,7 @@ def train(
         reg /= n
 
         # compute loss
-        mask = depth_map > 0
-        train_loss: Tensor = criterion(pred[mask], torch.log(depth_map[mask]))
+        train_loss: Tensor = criterion(pred, depth_map)
         loss: Tensor = train_loss + 0.01 * reg
         
         # backpropagation

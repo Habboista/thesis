@@ -1,3 +1,8 @@
+from src.models import Model
+from src.losses import Loss
+from src.data.augmenters import Augmenter
+from src.data.patch_samplers import PatchSampler
+
 from src.models import MyModel
 from src.losses import ScaleInvariantLoss
 
@@ -20,38 +25,38 @@ __all__ = [
 ]
 
 # Setup options
-kitti_path = '/media/antonio/523f31c5-dc82-4dce-8457-65b5dd1f19e4/kitti'
-kitti_ext = 'png'
-experiment_name = __name__.split('.')[-1]
+kitti_path: str = '/media/antonio/523f31c5-dc82-4dce-8457-65b5dd1f19e4/kitti'
+kitti_ext: str = 'png'
+experiment_name: str = __name__.split('.')[-1]
 
 # Training options
-num_epochs = 10
-batch_size = 1
-lr = 1e-4
-criterion = ScaleInvariantLoss()
+num_epochs: int = 10
+batch_size: int = 1
+lr: float = 1e-4
+criterion: Loss = ScaleInvariantLoss()
 
 # Model
-model = MyModel()
+model: Model = MyModel()
 
 # Data manipulation options
-train_augmenter = MyAugmenter(
+train_augmenter: Augmenter = MyAugmenter(
     color_jittering=True,
     hflip=True,
     scaling_range=(0.5, 1.),
 )
-train_patch_sampler = MyPatchSampler(
+train_patch_sampler: PatchSampler = MyPatchSampler(
     batch_size=16,
     blur=True,
     half_h=80,
     half_w=80,
     corner_sampling=True,
 )
-val_augmenter = MyAugmenter(
+val_augmenter: Augmenter = MyAugmenter(
     color_jittering=False,
     hflip=False,
     scaling_range=(1., 1.),
 )
-val_patch_sampler = MyPatchSampler(
+val_patch_sampler: PatchSampler = MyPatchSampler(
     batch_size=1,
     blur=True,
     half_h=80,

@@ -8,7 +8,7 @@ from src.info import Info
 
 ########################################################
 #                   EXPERIMENT OPTIONS                 #
-from experiments.options.debug_experiment import *
+from experiments.options.eigen import *
 ########################################################
 
 def main():

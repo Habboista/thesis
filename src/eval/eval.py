@@ -1,16 +1,14 @@
 import torch
-from torch import Tensor
-import torch.nn as nn
-import torch.utils.data as data
 from tqdm import tqdm
 
 from .utils import get_metrics
-from ..info import Info
+
+from ..models import Model
 from ..data.kitti_raw import KITTIRAWDataset
-from timethis import timethis
+from ..info import Info
 
 def eval(
-        model: nn.Module,
+        model: Model,
         dataset: KITTIRAWDataset,
         val_info: Info,
 ) -> None:
@@ -23,11 +21,7 @@ def eval(
             image = image.to('cuda')
             depth_map = depth_map.to('cuda')
 
-            # inputs have two leading batch dimensions
-            image = image.reshape(-1, *image.shape[2:])
-            depth_map = depth_map.reshape(-1, *depth_map.shape[2:])
-
             # predict
             pred = model(image)
         
-            val_info.log_info(get_metrics(depth_map, torch.exp(pred)))
+            val_info.log_info(get_metrics(pred, depth_map))

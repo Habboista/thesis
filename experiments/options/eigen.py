@@ -1,4 +1,9 @@
-from src.models.eigen import CoarseFine
+from src.models import Model
+from src.losses import Loss
+from src.data.augmenters import Augmenter
+from src.data.patch_samplers import PatchSampler
+
+from src.models.model_eigen import CoarseFine
 from src.losses import ScaleInvariantLoss
 
 from src.data.augmenters import NoAugmenter
@@ -25,21 +30,21 @@ __all__ = [
 ]
 
 # Setup options
-kitti_path = '/media/antonio/523f31c5-dc82-4dce-8457-65b5dd1f19e4/kitti'
-kitti_ext = 'png'
-experiment_name = __name__.split('.')[-1]
+kitti_path: str = '/media/antonio/523f31c5-dc82-4dce-8457-65b5dd1f19e4/kitti'
+kitti_ext: str = 'png'
+experiment_name: str = __name__.split('.')[-1]
 
 # Training options
-num_epochs = 10
-batch_size = 64
-lr = 1e-4
-criterion = ScaleInvariantLoss()
+num_epochs: int = 10
+batch_size: int = 64
+lr: float = 1e-4
+criterion: Loss = ScaleInvariantLoss()
 
 # Model
-model = CoarseFine()
+model: Model = CoarseFine()
 
 # Data manipulation options
-train_augmenter = EigenAugmenter()
-train_patch_sampler = EigenPatchSampler(1)
-val_augmenter = TestAugmenter()
-val_patch_sampler = TestPatchSampler()
+train_augmenter: Augmenter = EigenAugmenter()
+train_patch_sampler: PatchSampler = EigenPatchSampler(1)
+val_augmenter: Augmenter = TestAugmenter()
+val_patch_sampler: PatchSampler = TestPatchSampler()
