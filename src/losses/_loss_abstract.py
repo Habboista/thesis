@@ -18,9 +18,6 @@ class Loss(Module, ABC):
         assert len(pred_depth.shape) >= 3, \
             "Expected depth map of size ... x 1 x H x W, " \
                 f"got {pred_depth.shape}"
-        assert pred_depth.min() > 0., \
-            "Expected pred depth map to be strictly positive, " \
-                f"but its minimum value is {pred_depth.min()}"
 
     def _check_output(self, loss: Tensor):
         assert len(loss.shape) == 0, \
@@ -28,7 +25,6 @@ class Loss(Module, ABC):
         
     def forward(self, pred_depth: Tensor, gt_depth: Tensor) -> Tensor:
         """Expects pred_depth and gt_depth tensors of same shape ... x 1 x H x W.
-        pred_depth and gt_depth must be in linear scale.
         """
         self._check_inputs(pred_depth, gt_depth)
         loss = self._forward(pred_depth, gt_depth)

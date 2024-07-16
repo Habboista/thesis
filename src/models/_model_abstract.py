@@ -9,8 +9,8 @@ class Model(Module, ABC):
     def __init__(self):
         super().__init__()
 
-    def __setattr__(self, name: str, value: Tensor | Module) -> None:
-        return super().__setattr__(name, value)
+    #def __setattr__(self, name: str, value: Tensor | Module) -> None:
+    #    return super().__setattr__(name, value)
 
     @abstractmethod
     def _forward(self, image: Tensor) -> Tensor:
@@ -34,7 +34,12 @@ class Model(Module, ABC):
             raise ValueError(f"result must be a 4D tensor of shape {self.output_shape}, got {result.shape}")
         if result.shape != self.output_shape:
             raise ValueError(f"result must be a 4D tensor of shape {self.output_shape}, got {result.shape}")
-        assert result.min() > 0., f"Expected result to be strictly positive, but its minimum value is {result.min()}"
+        
+        # During evaluation depth map in linear scale is expected
+        if not self.training:
+            assert result.min() > 0., \
+                "Expected result to be strictly positive, " \
+                    f"but its minimum value is {result.min()}"
         
     def forward(self, image: Tensor) -> Tensor:
         self._check_inputs(image)

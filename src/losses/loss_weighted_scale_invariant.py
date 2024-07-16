@@ -12,6 +12,10 @@ class WeightedScaleInvariantLoss(Loss):
         super().__init__()
 
     def _forward(self, pred_depth: Tensor, gt_depth: Tensor) -> Tensor:
+        assert pred_depth.min() > 0., \
+            "Expected pred depth map to be strictly positive, " \
+                f"but its minimum value is {pred_depth.min()}"
+        
         mask = (gt_depth > 0.)
         d = torch.log(pred_depth[mask]) - torch.log(gt_depth[mask])
         weights = get_blur_weight_mask(pred_depth)[mask]

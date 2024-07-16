@@ -16,7 +16,7 @@ def readlines(filename: str) -> list[str]:
         lines = f.read().splitlines()
     return lines
 
-class EigenSplitDataset(ABC, torch_data.Dataset):
+class EigenSplitDataset(torch_data.Dataset, ABC):
     """Base class for KITTI dataset. It provides a common interface to the Eigen split of KITTI.
     """
     def __init__(
@@ -49,6 +49,7 @@ class EigenSplitDataset(ABC, torch_data.Dataset):
     
     def __getitem__(self, index) -> tuple[Tensor, Tensor]:
         image, point_cloud = self._load(index)
+        print(point_cloud.points.shape)
         image, point_cloud = self.augmenter(image, point_cloud)
         image_patches, depth_patches = self.patch_sampler(image, point_cloud)
         
