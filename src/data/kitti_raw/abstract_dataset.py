@@ -47,16 +47,16 @@ class EigenSplitDataset(torch_data.Dataset, ABC):
     def __len__(self) -> int:
         return len(self.filenames)
     
-    def __getitem__(self, index) -> tuple[Tensor, Tensor]:
+    def __getitem__(self, index) -> tuple[Tensor, Tensor, dict[str, Tensor]]:
         image: Tensor
         point_cloud: Tensor
         camera_parameters: dict[str, Tensor]
 
         image, point_cloud, camera_parameters = self._load(index)
-        image, point_cloud = self.augmenter(image, point_cloud)
-        image_patches, depth_patches = self.patch_sampler(image, point_cloud)
+        image, point_cloud, camera_parameters = self.augmenter(image, point_cloud, camera_parameters)
+        image_patches, depth_patches, camera_parameters = self.patch_sampler(image, point_cloud, camera_parameters)
         
-        return image_patches, depth_patches
+        return image_patches, depth_patches, camera_parameters
 
     @abstractmethod
     def _load(self, index: int) -> tuple[Tensor, Tensor, dict[str, Tensor]]:

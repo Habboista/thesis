@@ -6,11 +6,13 @@ import torchvision.transforms as T
 import torchvision.transforms.functional as F
 
 from ._augmenter_abstract import Augmenter
-from ..point_cloud import PointCloud
 
 class NoAugmenter(Augmenter):
     def __init__(self):
         pass
 
-    def __call__(self, image: Tensor, point_cloud: PointCloud) -> tuple[Tensor, PointCloud]:
-        return image, point_cloud
+    def __call__(
+        self, image: Tensor, point_cloud: Tensor, camera_parameters: dict[str, Tensor]
+    ) -> tuple[Tensor, Tensor, dict[str, Tensor]]:
+        
+        return image, point_cloud, camera_parameters
