@@ -1,10 +1,13 @@
 import torch
 from torch import Tensor
 
+from timethis import timethis
+
 __all__ = [
     "render_depth_map",
 ]
 
+@timethis
 def render_depth_map(
     point_cloud: Tensor, camera_parameters: dict[str, Tensor]
 ) -> Tensor:

@@ -16,7 +16,7 @@ def train(
     ) -> None:
 
     model.train()
-    for image, depth_map in tqdm(train_loader):
+    for image, depth_map, camera_parameters in tqdm(train_loader):
         optimizer.zero_grad()
 
         # convert to cuda
@@ -24,11 +24,14 @@ def train(
         depth_map = depth_map.to('cuda')
 
         # inputs have two leading batch dimensions
-        image = image.reshape(-1, *image.shape[2:])
-        depth_map = depth_map.reshape(-1, *depth_map.shape[2:])
+        image = image.reshape(-1, *image.shape[-3:])
+        depth_map = depth_map.reshape(-1, *depth_map.shape[-3:])
+        camera_parameters = {
+            k: v.reshape(-1, *v.shape[-2:]).to('cuda')
+            for k, v in camera_parameters.items()}
 
         # predict
-        pred = model(image)
+        pred = model(image, camera_parameters)
 
         # regularization
         reg: Tensor = torch.tensor(0., device='cuda')

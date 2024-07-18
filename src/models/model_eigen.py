@@ -46,7 +46,7 @@ class CoarseFine(Model):
         self.coarse = Coarse(coarse_size)
         self.fine = Fine()
 
-    def _forward(self, x: Tensor) -> Tensor:
+    def _forward(self, x: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
         x = 2* (x - 0.5)
         coarse_map = self.coarse(x)
         fine_map = self.fine(x, coarse_map)

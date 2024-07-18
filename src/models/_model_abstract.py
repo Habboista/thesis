@@ -13,7 +13,7 @@ class Model(Module, ABC):
     #    return super().__setattr__(name, value)
 
     @abstractmethod
-    def _forward(self, image: Tensor) -> Tensor:
+    def _forward(self, image: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
         ...
 
     def _check_inputs(self, image: Tensor):
@@ -41,8 +41,8 @@ class Model(Module, ABC):
                 "Expected result to be strictly positive, " \
                     f"but its minimum value is {result.min()}"
         
-    def forward(self, image: Tensor) -> Tensor:
+    def forward(self, image: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
         self._check_inputs(image)
-        result = self._forward(image)
+        result = self._forward(image, camera_parameters)
         self._check_outputs(result)
         return result

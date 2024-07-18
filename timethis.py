@@ -1,6 +1,7 @@
 import time
 import os
 
+# Enable or disable display of information
 ENABLE = False
 
 class Singleton(type):

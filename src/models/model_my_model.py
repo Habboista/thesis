@@ -10,7 +10,7 @@ class MyModel(Model):
         super().__init__()
         self.base_model = CoarseFine(coarse_size=(32, 32))
 
-    def _forward(self, x: Tensor) -> Tensor:
+    def _forward(self, x: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
         if self.training:
             return self.base_model(x)
         return self.base_model(x)

@@ -3,6 +3,8 @@ import torch
 from torch import Tensor
 import torchvision.transforms.functional as F
 
+from timethis import timethis
+
 __all__ = [
     "horizontal_flip_through_camera",
     "scale_through_camera",
@@ -16,6 +18,7 @@ def copy_camera_parameters(camera_parameters: dict[str, Tensor]) -> dict[str, Te
     """Returns a deep copy of the dict of Tensors."""
     return {k: v.clone() for k, v in camera_parameters.items()}
 
+@timethis
 def horizontal_flip_through_camera(
     image: Tensor, camera_parameters: dict[str, Tensor]
 ) -> tuple[Tensor, dict[str, Tensor]]:
@@ -30,6 +33,7 @@ def horizontal_flip_through_camera(
 
     return out_image, out_camera_parameters
 
+@timethis
 def scale_through_camera(
     image: Tensor, camera_parameters: dict[str, Tensor], s: float
 ) -> tuple[Tensor, dict[str, Tensor]]:
@@ -51,6 +55,7 @@ def scale_through_camera(
 
     return out_image, out_camera_parameters
 
+@timethis
 def scale_through_depth(
     image: Tensor, camera_parameters: dict[str, Tensor], s: float
 ) -> tuple[Tensor, dict[str, Tensor]]:
@@ -71,6 +76,7 @@ def scale_through_depth(
 
     return out_image, out_camera_parameters
 
+@timethis
 def center_crop_through_camera(
     image: Tensor, camera_parameters: dict[str, Tensor], crop_size: tuple[int, int]
 ) -> tuple[Tensor, dict[str, Tensor]]:
@@ -98,7 +104,7 @@ def center_crop_through_camera(
    
     return out_image, out_camera_parameters
 
-
+@timethis
 def blur(
     image: Tensor,
 ) -> Tensor:
@@ -120,6 +126,7 @@ def blur(
 
     return out_image
 
+@timethis
 def warp(
     image: Tensor, camera_parameters: dict[str, Tensor], x: int, y: int
 ) -> tuple[Tensor, dict[str, Tensor]]:
