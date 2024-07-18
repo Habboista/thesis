@@ -80,10 +80,12 @@ def center_crop_through_camera(
 
     p_x = out_camera_parameters['K'][0, 2]
     p_y = out_camera_parameters['K'][1, 2]
+    i = int(p_y - crop_size[0]//2)
+    j = int(p_x - crop_size[1]//2)
     out_image = image[
         ...,
-        int(p_y - crop_size[0]//2) : int(p_y + crop_size[0]),
-        int(p_x - crop_size[1]//2) : int(p_x + crop_size[1]),
+        i : i+crop_size[0],
+        j : j+crop_size[1],
     ].clone()
 
     p_x -= (p_x - crop_size[0] // 2) # p_x
