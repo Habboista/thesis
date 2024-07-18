@@ -41,6 +41,19 @@ def main():
     if not os.path.isdir(info_dir):
         os.makedirs(info_dir)
 
+    # Load checkpoint
+    print("Looking for a checkpoint...")
+    checkpoints = os.listdir(checkpoints_dir)
+    if len(checkpoints) > 0:
+        checkpoints.sort()
+        checkpoint_path = os.path.join(checkpoints_dir, checkpoints[-1])
+        print(f"Checkpoint {checkpoints[-1]} found, loading it.\n" \
+            f"Resuming from epoch: {len(checkpoints)}\n")
+        model.load_state_dict(torch.load(checkpoint_path))
+        num_epochs -= len(checkpoints)
+    else:
+        print("No checkpoint found, instantiating new model.\n")
+
     model = model.to('cuda')
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 

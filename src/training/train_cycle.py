@@ -6,12 +6,13 @@ import torch.optim as optim
 import torch.utils.data as data
 
 from ..info import Info
+from ..models import Model
 from .train import train
 from ..eval import eval
 from ..data.kitti_raw import KITTIRAWDataset
 
 def train_cycle(
-    model: nn.Module,
+    model: Model,
     optimizer: optim.Optimizer,
     criterion: nn.Module,
     train_dataset: KITTIRAWDataset,
