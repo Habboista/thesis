@@ -41,6 +41,7 @@ class Info:
                 data[k].extend(v)
         for k, v in data.items():
             plt.title(k)
+            plt.yscale('log')
             plt.plot(v)
             plt.savefig(os.path.join(self.dir_path, f'{k}.png'))
             plt.close()
