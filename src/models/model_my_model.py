@@ -2,8 +2,8 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 
-from .model_eigen import CoarseFine
 from ._model_abstract import Model
+from .model_eigen import CoarseFine
 
 class MyModel(Model):
     def __init__(self):
@@ -12,5 +12,5 @@ class MyModel(Model):
 
     def _forward(self, x: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
         if self.training:
-            return self.base_model(x)
-        return self.base_model(x)
+            return self.base_model(x, camera_parameters)
+        return self.base_model(x, camera_parameters)
