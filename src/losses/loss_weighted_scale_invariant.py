@@ -16,6 +16,8 @@ class WeightedScaleInvariantLoss(Loss):
             "Expected pred depth map to be strictly positive, " \
                 f"but its minimum value is {pred_depth.min()}"
         
+        raise NotImplementedError
+        
         mask = (gt_depth > 0.)
         d = torch.log(pred_depth[mask]) - torch.log(gt_depth[mask])
         weights = get_blur_weight_mask(pred_depth)[mask]

@@ -55,6 +55,9 @@ class Info:
         path = os.path.join(self.dir_path, filename)
         with open(path, 'w') as f:
             json.dump(self.info[epoch], f, indent=4)
+    
+    def save_last_epoch(self, filename: str) -> None:
+        self.save_epoch(-1, filename)
 
     def load_epoch(self, filename: str) -> None:
         path = os.path.join(self.dir_path, filename)
@@ -69,3 +72,6 @@ class Info:
         for k, v in self.info[epoch].items():
             print(f"\t{k}: {sum(v) / len(v):.3f}")
         print()
+
+    def print_last_epoch_summary(self) -> None:
+        self.print_epoch_summary(-1)

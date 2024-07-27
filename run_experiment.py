@@ -25,7 +25,7 @@ def main():
         train_patch_sampler,\
         val_augmenter,\
         val_patch_sampler
-    
+
     # Directories
     experiment_dir = os.path.join('experiments', experiment_name)
     checkpoints_dir = os.path.join(experiment_dir, 'checkpoints')
@@ -50,9 +50,9 @@ def main():
         print(f"Checkpoint {checkpoints[-1]} found, loading it.\n" \
             f"Resuming from epoch: {len(checkpoints)}\n")
         model.load_state_dict(torch.load(checkpoint_path))
-        num_epochs -= len(checkpoints)
     else:
         print("No checkpoint found, instantiating new model.\n")
+    start_epoch = len(checkpoints)
 
     model = model.to('cuda')
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
@@ -85,6 +85,7 @@ def main():
         criterion,
         train_set,
         val_set,
+        start_epoch,
         num_epochs,
         batch_size,
         training_info,

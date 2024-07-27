@@ -9,10 +9,7 @@ class ScaleInvariantLoss(Loss):
         super().__init__()
 
     def _forward(self, pred_depth: Tensor, gt_depth: Tensor) -> Tensor:
-        #assert pred_depth.min() > 0., \
-        #    "Expected pred depth map to be strictly positive, " \
-        #        f"but its minimum value is {pred_depth.min()}"
-        
+        """Expected pred_depth in log scale and gt_depth in linear scale."""
         mask = (gt_depth > 0.)
-        d = pred_depth[mask] - gt_depth[mask]
+        d = pred_depth[mask] - torch.log(gt_depth[mask])
         return torch.mean(d**2) - 0.5 * torch.mean(d)**2
