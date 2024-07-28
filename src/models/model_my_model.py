@@ -13,4 +13,15 @@ class MyModel(Model):
     def _forward(self, x: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
         if self.training:
             return self.base_model(x, camera_parameters)
+        raise NotImplementedError
+
+        # From coarser scale to finer
+            # Detect points of interest
+
+            # Warp
+
+            # Predict
+
+            # Warp back
+            
         return self.base_model(x, camera_parameters)

@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch import Tensor
+import torchvision.transforms as T
 import torchvision.transforms.functional as F
 
 from timethis import timethis
@@ -128,7 +129,7 @@ def blur(
 
 @timethis
 def warp(
-    image: Tensor, camera_parameters: dict[str, Tensor], x: int, y: int
+    image: Tensor, camera_parameters: dict[str, Tensor], x: int, y: int, interpolation: T.InterpolationMode,
 ) -> tuple[Tensor, dict[str, Tensor]]:
     """Given a point (x, y) applies perspective transform to both the image and the point cloud
     so that the point matches the central point (defined by px, py parameters of the camera) of the image."""
@@ -182,9 +183,9 @@ def warp(
     start_points = start_points[:, :2]
 
     # Warp image
-    out_image = F.perspective(image, start_points, end_points)
+    out_image = F.perspective(image, start_points, end_points, interpolation=interpolation)
 
-    # Compute depth map
+    # Adjust camera parameters
     out_camera_parameters['[R | t]'] = \
         torch.linalg.inv(R_xz @ R_yz) @ out_camera_parameters['[R | t]']
 

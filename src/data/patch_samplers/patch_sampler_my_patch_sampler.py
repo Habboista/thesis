@@ -4,6 +4,7 @@ import numpy as np
 import skimage
 import torch
 from torch import Tensor
+import torchvision.transforms as T
 import torchvision.transforms.functional as F
 
 from ._patch_sampler_abstract import PatchSampler
@@ -104,4 +105,4 @@ class MyPatchSampler(PatchSampler):
         peaks = skimage.feature.corner_peaks(np_corner_response) # TODO: this can be empty
         indeces = random.choices(range(peaks.shape[0]), k=self.batch_size)
     
-        return [warp(image, camera_parameters, x, y) for x, y in peaks[indeces]]
+        return [warp(image, camera_parameters, x, y, T.InterpolationMode.BILINEAR) for x, y in peaks[indeces]]
