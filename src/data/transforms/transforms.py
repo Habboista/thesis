@@ -132,7 +132,8 @@ def warp(
     image: Tensor, camera_parameters: dict[str, Tensor], x: int, y: int, interpolation: T.InterpolationMode,
 ) -> tuple[Tensor, dict[str, Tensor]]:
     """Given a point (x, y) applies perspective transform to both the image and the point cloud
-    so that the point matches the central point (defined by px, py parameters of the camera) of the image."""
+    so that the point matches the central point (defined by px, py parameters of the camera) of the image.
+    """
     
     out_camera_parameters: dict[str, Tensor] = copy_camera_parameters(camera_parameters)
 
@@ -161,6 +162,7 @@ def warp(
     # Arbitrary points in space for computing the homography
     # They just need to be a homogeneous reference system
     # i.e. each three of them is a group of independent vectors
+    # (x, y, z, 1)
     offset = 1.
     corners = torch.tensor([
         [-offset, -offset, offset*10., 1.],
