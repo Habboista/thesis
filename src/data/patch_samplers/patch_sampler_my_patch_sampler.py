@@ -8,6 +8,7 @@ import torchvision.transforms as T
 import torchvision.transforms.functional as F
 
 from ._patch_sampler_abstract import PatchSampler
+from .utils import clean_corner_response
 from ..transforms import render_depth_map
 from ..transforms import warp
 from ..transforms import blur
@@ -88,18 +89,7 @@ class MyPatchSampler(PatchSampler):
         np_image = image.permute(1, 2, 0).cpu().numpy()
         np_corner_response = skimage.feature.corner_moravec(skimage.color.rgb2gray(np_image))
 
-        # Cancel response near image boundaries (otherwise the warp contains out-of-view points)
-        # TODO: use a different shape for the allowed area than the rectangle
-        p1 = 0.2
-        p2 = 0.8
-        i1 = int(p1 * image.shape[-1])
-        i2 = int(p2 * image.shape[-1])
-        j1 = int(p1 * image.shape[-2])
-        j2 = int(p2 * image.shape[-2]) 
-        np_corner_response[:i1, :] = 0
-        np_corner_response[i2:, :] = 0
-        np_corner_response[:, :j1] = 0
-        np_corner_response[:, j2:] = 0
+        np_corner_response = clean_corner_response(np_corner_response)
 
         # Sample peaks of interest
         peaks = skimage.feature.corner_peaks(np_corner_response) # TODO: this can be empty
