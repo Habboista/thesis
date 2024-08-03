@@ -30,5 +30,6 @@ class MyModel(Model):
             # Predict
 
             # Warp back
+            
 
         return self.base_model(x, camera_parameters)

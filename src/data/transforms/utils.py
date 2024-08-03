@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import Tensor
 
@@ -36,3 +37,58 @@ def batched_back_project(camera_parameters: dict[str, Tensor], p: Tensor, Z: Ten
     p = p[:, :3] / p[:, 3:] 
     
     return p
+
+def get_rotation_matrix(x: float, y: float, camera_parameters: dict[str, Tensor]) -> Tensor:
+    """Compute the rotation that the camera has to do for making the pixel at (x, y) the principal point."""
+    # Compute angles of rotation
+    f_x = abs(camera_parameters['K'][0, 0])
+    f_y = abs(camera_parameters['K'][1, 1])
+    py = int(camera_parameters['K'][1, 2])
+    px = int(camera_parameters['K'][0, 2])
+    theta_yz = np.arctan2(y - py, f_y)
+    theta_xz = np.arctan2(x - px, f_x)
+    
+    # Rotation matrices
+    R_yz = torch.tensor([
+        [1,                    0,                   0, 0],
+        [0,     np.cos(theta_yz),    np.sin(theta_yz), 0],
+        [0,    -np.sin(theta_yz),    np.cos(theta_yz), 0],
+        [0,                    0,                   0, 1],
+    ], dtype=torch.float32)
+    R_xz = torch.tensor([
+        [ np.cos(theta_xz), 0,    np.sin(theta_xz), 0],
+        [                0, 1,                   0, 0],
+        [-np.sin(theta_xz), 0,    np.cos(theta_xz), 0],
+        [                0, 0,                   0, 1],
+    ], dtype=torch.float32)
+    R: Tensor = R_yz @ R_xz
+
+    return R
+
+def get_start_and_end_points(R: Tensor, camera_parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
+    # Arbitrary points in space for computing the homography
+    # They just need to be a homogeneous reference system
+    # i.e. each three of them is a group of independent vectors
+    # (x, y, z, 1)
+    offset = 1.
+    corners = torch.tensor([
+        [-offset, -offset, offset*10., 1.],
+        [-offset,  offset, offset*10., 1.],
+        [ offset, -offset, offset*10., 1.],
+        [ offset,  offset, offset*10., 1.],
+    ])
+
+    # Camera matrix (3x4)
+    P = torch.hstack((camera_parameters['K'], torch.zeros(3, 1)))
+
+    # Points projected in warped image
+    end_points = corners @ P.T
+    end_points[:, :2] /= end_points[:, 2:]
+    end_points = end_points[:, :2]
+
+    # Points projected in original image
+    start_points = corners @ R.T @ P.T
+    start_points[:, :2] /= start_points[:, 2:]
+    start_points = start_points[:, :2]
+
+    return start_points, end_points

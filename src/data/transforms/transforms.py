@@ -5,6 +5,7 @@ import torchvision.transforms as T
 import torchvision.transforms.functional as F
 from typing import Callable
 
+from .utils import get_rotation_matrix, get_start_and_end_points
 from timethis import timethis
 
 __all__ = [
@@ -138,63 +139,22 @@ def warp(
     
     out_camera_parameters: dict[str, Tensor] = copy_camera_parameters(camera_parameters)
 
-    # Compute angles of rotation
-    f_x = abs(out_camera_parameters['K'][0, 0])
-    f_y = abs(out_camera_parameters['K'][1, 1])
-    py = int(out_camera_parameters['K'][1, 2])
-    px = int(out_camera_parameters['K'][0, 2])
-    theta_yz = np.arctan2(y - py, f_y)
-    theta_xz = np.arctan2(x - px, f_x)
-    
-    # Rotation matrices
-    R_yz = torch.tensor([
-        [1,                    0,                   0, 0],
-        [0,     np.cos(theta_yz),    np.sin(theta_yz), 0],
-        [0,    -np.sin(theta_yz),    np.cos(theta_yz), 0],
-        [0,                    0,                   0, 1],
-    ], dtype=torch.float32)
-    R_xz = torch.tensor([
-        [ np.cos(theta_xz), 0,    np.sin(theta_xz), 0],
-        [                0, 1,                   0, 0],
-        [-np.sin(theta_xz), 0,    np.cos(theta_xz), 0],
-        [                0, 0,                   0, 1],
-    ], dtype=torch.float32)
+    # Compute rotation matrix
+    R: Tensor = get_rotation_matrix(x, y, camera_parameters)
 
-    # Arbitrary points in space for computing the homography
-    # They just need to be a homogeneous reference system
-    # i.e. each three of them is a group of independent vectors
-    # (x, y, z, 1)
-    offset = 1.
-    corners = torch.tensor([
-        [-offset, -offset, offset*10., 1.],
-        [-offset,  offset, offset*10., 1.],
-        [ offset, -offset, offset*10., 1.],
-        [ offset,  offset, offset*10., 1.],
-    ])
-
-    # Camera matrix (3x4)
-    P = torch.hstack((out_camera_parameters['K'], torch.zeros(3, 1)))
-
-    # Points projected in warped image
-    end_points = corners @ P.T
-    end_points[:, :2] /= end_points[:, 2:]
-    end_points = end_points[:, :2]
-
-    # Points projected in original image
-    start_points = corners @ R_xz.T @ R_yz.T @ P.T
-    start_points[:, :2] /= start_points[:, 2:]
-    start_points = start_points[:, :2]
+    # Correspond points in the image and the warped image for computing homography
+    start_points, end_points = get_start_and_end_points(R, out_camera_parameters)
 
     # Warp image
     out_image = F.perspective(image, start_points, end_points, interpolation=interpolation)
 
     # Adjust camera parameters
     out_camera_parameters['[R | t]'] = \
-        torch.linalg.inv(R_xz @ R_yz) @ out_camera_parameters['[R | t]']
+        torch.linalg.inv(R) @ out_camera_parameters['[R | t]']
 
     if not return_inverse:
         return out_image, out_camera_parameters
-    else:
+    else: # TODO: remove this
         inverse_bil = lambda img: F.perspective(img, end_points, start_points, interpolation=T.InterpolationMode.BILINEAR)
         inverse_nn = lambda img: F.perspective(img, end_points, start_points, interpolation=T.InterpolationMode.NEAREST)
 

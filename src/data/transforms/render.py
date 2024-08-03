@@ -38,6 +38,7 @@ def render_depth_map(
     depth: Tensor = torch.zeros(tuple(size))
     depth[y, x] = z
 
+    # TODO: make the following faster and in torch
     # find the duplicate points and choose the closest depth
     # flat_inds = np.ravel_multi_index((y, x), tuple(size))
     # duplicate_inds, counts = np.unique(flat_inds, return_counts=True)
