@@ -3,6 +3,7 @@ import torch
 from torch import Tensor
 import torchvision.transforms as T
 import torchvision.transforms.functional as F
+from typing import Callable
 
 from timethis import timethis
 
@@ -129,8 +130,8 @@ def blur(
 
 @timethis
 def warp(
-    image: Tensor, camera_parameters: dict[str, Tensor], x: int, y: int, interpolation: T.InterpolationMode,
-) -> tuple[Tensor, dict[str, Tensor]]:
+    image: Tensor, camera_parameters: dict[str, Tensor], x: int, y: int, interpolation: T.InterpolationMode, return_inverse: bool=False
+) -> tuple[Tensor, dict[str, Tensor]] | tuple[Tensor, dict[str, Tensor], Callable, Callable]:
     """Given a point (x, y) applies perspective transform to both the image and the point cloud
     so that the point matches the central point (defined by px, py parameters of the camera) of the image.
     """
@@ -142,8 +143,8 @@ def warp(
     f_y = abs(out_camera_parameters['K'][1, 1])
     py = int(out_camera_parameters['K'][1, 2])
     px = int(out_camera_parameters['K'][0, 2])
-    theta_yz = - np.arctan2(y - py, f_y)
-    theta_xz = - np.arctan2(x - px, f_x)
+    theta_yz = np.arctan2(y - py, f_y)
+    theta_xz = np.arctan2(x - px, f_x)
     
     # Rotation matrices
     R_yz = torch.tensor([
@@ -191,4 +192,10 @@ def warp(
     out_camera_parameters['[R | t]'] = \
         torch.linalg.inv(R_xz @ R_yz) @ out_camera_parameters['[R | t]']
 
-    return out_image, out_camera_parameters
+    if not return_inverse:
+        return out_image, out_camera_parameters
+    else:
+        inverse_bil = lambda img: F.perspective(img, end_points, start_points, interpolation=T.InterpolationMode.BILINEAR)
+        inverse_nn = lambda img: F.perspective(img, end_points, start_points, interpolation=T.InterpolationMode.NEAREST)
+
+        return out_image, out_camera_parameters, inverse_bil, inverse_nn

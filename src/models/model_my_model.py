@@ -20,8 +20,12 @@ class MyModel(Model):
         scaled_images = [scale_through_depth(x, camera_parameters, s) for s in [0.25, 0.5, 1.]]
         for image, camera_parameters in scaled_images:
             # Detect points of interest
+            i, j = (10, 10)
 
             # Warp
+            
+
+            # Blur
 
             # Predict
 

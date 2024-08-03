@@ -92,7 +92,7 @@ class MyPatchSampler(PatchSampler):
         np_corner_response = clean_corner_response(np_corner_response)
 
         # Sample peaks of interest
-        peaks = skimage.feature.corner_peaks(np_corner_response) # TODO: this can be empty
+        peaks = skimage.feature.corner_peaks(np_corner_response, min_distance=5) # (row, column)
         indeces = random.choices(range(peaks.shape[0]), k=self.batch_size)
     
-        return [warp(image, camera_parameters, x, y, T.InterpolationMode.BILINEAR) for x, y in peaks[indeces]]
+        return [warp(image, camera_parameters, x, y, T.InterpolationMode.BILINEAR) for y, x in peaks[indeces]]
