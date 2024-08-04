@@ -2,7 +2,7 @@ from torch import Tensor
 import torchvision.transforms.functional as F
 
 from ._patch_sampler_abstract import PatchSampler
-from ..transforms import render_depth_map
+from ..transforms import cloud2depth
 
 class TestPatchSampler(PatchSampler):
     def __init__(self):
@@ -12,7 +12,7 @@ class TestPatchSampler(PatchSampler):
         self, image: Tensor, point_cloud: Tensor, camera_parameters: dict[str, Tensor]
     ) -> tuple[Tensor, Tensor, dict[str, Tensor]]:
         # project point cloud to image
-        depth_map: Tensor = render_depth_map(point_cloud, camera_parameters)
+        depth_map: Tensor = cloud2depth(point_cloud, camera_parameters)
 
         # Generate center crop # TODO crop around central point
         image = F.center_crop(image, self.crop_size)

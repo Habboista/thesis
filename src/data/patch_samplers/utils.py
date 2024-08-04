@@ -4,6 +4,12 @@ import torch.nn as nn
 from torch import Tensor
 import torchvision.transforms.functional as F
 
+__all__ = [
+    "blur",
+    "get_blur_weight_mask",
+    "clean_corner_response",
+]
+
 def blur(image: Tensor) -> Tensor:
     blur_0 = image
     blur_1 = F.gaussian_blur(blur_0, (5, 5), (1.5, 1.5))
@@ -31,25 +37,20 @@ def blur(image: Tensor) -> Tensor:
 
     return blur
 
-def get_blur_weight_mask(image: Tensor) -> Tensor:
-    assert len(image.shape) >= 3, f"Expected image of size ... x 3 x H x W, got {image.shape}"
-    assert image.shape[-3] == 3,  f"Expected image of size ... x 3 x H x W, got {image.shape}"
-
-    shape = tuple(image.shape)
-    shape = tuple(shape[:-3]) + (1,) + tuple(shape[-2:])
+def get_blur_weight_mask(shape: tuple[int, int]) -> Tensor:
     mask = torch.ones(*shape, dtype=torch.float) * 0.1
 
-    i1 = image.shape[-2] // 6
-    j1 = image.shape[-1] // 6
-    i2 = image.shape[-2] * 5 // 6
-    j2 = image.shape[-1] * 5 // 6
+    i1 = shape[-2] // 6
+    j1 = shape[-1] // 6
+    i2 = shape[-2] * 5 // 6
+    j2 = shape[-1] * 5 // 6
 
     mask[..., i1:i2, j1:j2] = 0.5
 
-    i1 = image.shape[-2] // 3
-    j1 = image.shape[-1] // 3
-    i2 = image.shape[-2] * 2 // 3
-    j2 = image.shape[-1] * 2 // 3
+    i1 = shape[-2] // 3
+    j1 = shape[-1] // 3
+    i2 = shape[-2] * 2 // 3
+    j2 = shape[-1] * 2 // 3
 
     mask[..., i1:i2, j1:j2] = 1
 

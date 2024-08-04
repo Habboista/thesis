@@ -1,14 +1,16 @@
 import torch
 from torch import Tensor
 
+from .utils import batched_back_project
 from timethis import timethis
 
 __all__ = [
-    "render_depth_map",
+    "cloud2depth",
+    "depth2cloud",
 ]
 
 @timethis
-def render_depth_map(
+def cloud2depth(
     point_cloud: Tensor, camera_parameters: dict[str, Tensor]
 ) -> Tensor:
     """Project points to the image plane and render their depth map.
@@ -48,3 +50,19 @@ def render_depth_map(
     #     depth[y[pts], x[pts]] = z[pts].min()
 
     return depth.unsqueeze(0)
+
+def depth2cloud(depth_map: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
+    """Project depth map to 3D point cloud."""
+
+    x: Tensor = torch.linspace(0., float(camera_parameters['image_size'][1] - 1), int(2 * camera_parameters['image_size'][1].item()))
+    y: Tensor = torch.linspace(0., float(camera_parameters['image_size'][0] - 1), int(2 * camera_parameters['image_size'][0].item()))
+
+    grid_x, grid_y = torch.meshgrid(x, y, indexing='xy')
+
+    x = grid_x.flatten()
+    y = grid_y.flatten()
+    z: Tensor = depth_map[y, x]
+
+    p = torch.stack((x, y, torch.ones(len(x))), dim=1)
+
+    return batched_back_project(camera_parameters, p, z)

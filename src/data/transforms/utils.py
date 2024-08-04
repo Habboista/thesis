@@ -24,10 +24,10 @@ def batched_back_project(camera_parameters: dict[str, Tensor], p: Tensor, Z: Ten
             the respective backprojected point from p array in inhomogeneous representation
     
     Returns:
-        ...
+        The homogeneous points in the absolute reference system
     
     Raises:
-        ...
+        ValueError if p is not of shape N x 3, i.e. expressed in homogeneous coordinates
     """
     if len(p.shape) != 2 or p.shape[1] != 3:
         raise ValueError("p expected to be of shape N x 3")
@@ -40,8 +40,10 @@ def batched_back_project(camera_parameters: dict[str, Tensor], p: Tensor, Z: Ten
     _lambda = (Z * p[..., 3] - p[..., 2]) / (C[None, 2] - Z * C[None, 3]) # N values
 
     p = p + _lambda[..., None] * C[None, :] # (N x 4) + (N x 1) * (1 x 4)
-    p = p[:, :3] / p[:, 3:] 
+    p = p[:, :] / p[:, 3:]
     
+    p = p @ torch.linalg.inv(camera_parameters['[R | t]']).T
+
     return p
 
 def get_rotation_matrix(x: float, y: float, camera_parameters: dict[str, Tensor]) -> Tensor:

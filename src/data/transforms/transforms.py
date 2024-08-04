@@ -131,7 +131,7 @@ def blur(
 
 @timethis
 def warp(
-    image: Tensor, camera_parameters: dict[str, Tensor], x: int, y: int, interpolation: T.InterpolationMode, return_inverse: bool=False
+    image: Tensor, camera_parameters: dict[str, Tensor], x: int, y: int, interpolation: T.InterpolationMode,
 ) -> tuple[Tensor, dict[str, Tensor]] | tuple[Tensor, dict[str, Tensor], Callable, Callable]:
     """Given a point (x, y) applies perspective transform to both the image and the point cloud
     so that the point matches the central point (defined by px, py parameters of the camera) of the image.
@@ -152,10 +152,4 @@ def warp(
     out_camera_parameters['[R | t]'] = \
         torch.linalg.inv(R) @ out_camera_parameters['[R | t]']
 
-    if not return_inverse:
-        return out_image, out_camera_parameters
-    else: # TODO: remove this
-        inverse_bil = lambda img: F.perspective(img, end_points, start_points, interpolation=T.InterpolationMode.BILINEAR)
-        inverse_nn = lambda img: F.perspective(img, end_points, start_points, interpolation=T.InterpolationMode.NEAREST)
-
-        return out_image, out_camera_parameters, inverse_bil, inverse_nn
+    return out_image, out_camera_parameters

@@ -9,7 +9,7 @@ import torchvision.transforms.functional as F
 
 from ._patch_sampler_abstract import PatchSampler
 from .utils import clean_corner_response
-from ..transforms import render_depth_map
+from ..transforms import cloud2depth
 from ..transforms import warp
 from ..transforms import blur
 from ..transforms import center_crop_through_camera
@@ -54,7 +54,7 @@ class MyPatchSampler(PatchSampler):
             out_camera_parameters.append(out_cam_params)
             
             # Render depth
-            out_depth_maps.append(render_depth_map(point_cloud, out_cam_params))
+            out_depth_maps.append(cloud2depth(point_cloud, out_cam_params))
         
         # Batch crops
         batched_images: Tensor = torch.stack(out_images)

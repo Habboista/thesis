@@ -5,7 +5,7 @@ from torch import Tensor
 import torchvision.transforms.functional as F
 
 from ._patch_sampler_abstract import PatchSampler
-from ..transforms import render_depth_map
+from ..transforms import cloud2depth
 from timethis import timethis
 
     
@@ -20,7 +20,7 @@ class EigenPatchSampler(PatchSampler):
         self, image: Tensor, point_cloud: Tensor, camera_parameters: dict[str, Tensor]
     ) -> tuple[Tensor, Tensor, dict[str, Tensor]]:
         
-        depth_map: Tensor = render_depth_map(point_cloud, camera_parameters)
+        depth_map: Tensor = cloud2depth(point_cloud, camera_parameters)
 
         # Generate crops
         ii = random.choices(range(image.shape[-2] - self.crop_size[0] + 1), k=self.batch_size)
