@@ -61,7 +61,7 @@ def depth2cloud(depth_map: Tensor, camera_parameters: dict[str, Tensor]) -> Tens
 
     x = grid_x.flatten()
     y = grid_y.flatten()
-    z: Tensor = depth_map[y, x]
+    z: Tensor = torch.ones(len(x)) #depth_map[y, x]
 
     p = torch.stack((x, y, torch.ones(len(x))), dim=1)
 

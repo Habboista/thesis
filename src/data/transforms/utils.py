@@ -33,7 +33,7 @@ def batched_back_project(camera_parameters: dict[str, Tensor], p: Tensor, Z: Ten
         raise ValueError("p expected to be of shape N x 3")
     
     P = torch.hstack((camera_parameters['K'], torch.zeros((3, 1))))
-    P_inv = torch.linalg.inv(P)
+    P_inv = torch.linalg.pinv(P)
     p = p @ P_inv.T # N x 4
     C = torch.tensor([0., 0., 0., 1.])
 
