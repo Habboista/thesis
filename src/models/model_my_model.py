@@ -18,8 +18,8 @@ class MyModel(Model):
         self.weight: Tensor = torch.tensor(1.) if not self.blur else get_blur_weight_mask((150, 150))
         self.num_epochs = num_epochs
     
-    def _copy_model(self) -> Model:
-        model: Model = CoarseFine(coarse_size=(32, 32)).to('cuda')
+    def _copy_model(self, device: torch.device) -> Model:
+        model: Model = CoarseFine(coarse_size=(32, 32)).to(device)
         for param_dst, param_src in zip(model.parameters(), self.base_model.parameters()):
             param_dst.data.copy_(param_src.data)
         return model
@@ -79,13 +79,29 @@ class MyModel(Model):
                     loss = loss + torch.mean((preds[i][masks[i]] - preds[j][masks[j]])**2)
         loss = loss + reg
         return loss
+    
+    def fine_tune(self, model: Model, camera_parameters: dict[str, Tensor], image: Tensor, first_preds: list[Tensor]) -> None:
+        model.train()
+        for epoch in range(self.num_epochs):
+            print(f"\nEpoch {epoch+1}/{self.num_epochs}")
+            model.zero_grad()
+            preds = self._predict(image, camera_parameters, model) # linear-scale
+            loss = self._compute_loss(preds, first_preds)
+            loss.backward()
+            with torch.no_grad():
+                for param in model.parameters():
+                    param.data -= 0.1 * param.grad
         
     def _forward(self, x: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
+        device: torch.device = x.device
+        print("Working on device:", device)
+        self.to(device)
+
         if self.training:
             return self.base_model(x, camera_parameters)
 
         # Work with a copy of the base model
-        model: Model = self._copy_model()
+        model: Model = self._copy_model(device)
 
         # Unbatch (Expected batch of size 1)
         print("Unbatching...")
@@ -102,16 +118,7 @@ class MyModel(Model):
 
         # Fine tune the network
         print("Fine-tuining before blending...")
-        model.train()
-        for epoch in range(self.num_epochs):
-            print(f"\nEpoch {epoch+1}/{self.num_epochs}")
-            model.zero_grad()
-            preds = self._predict(image, camera_parameters, model) # linear-scale
-            loss = self._compute_loss(preds, first_preds)
-            loss.backward()
-            with torch.no_grad():
-                for param in model.parameters():
-                    param.data -= 0.1 * param.grad
+        self.fine_tune(model, camera_parameters, image, first_preds)
 
         # Blend
         print("\nComputing the final predictions...")
@@ -123,4 +130,7 @@ class MyModel(Model):
         stacked_preds: Tensor = torch.stack(preds)
         stacked_preds[stacked_preds <= 0] = torch.nan
 
-        return stacked_preds.nanmean(0)
+        result = stacked_preds.nanmean(0).unsqueeze(0)
+        result[result.isnan()] = 1e-3
+
+        return result

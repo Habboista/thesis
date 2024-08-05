@@ -15,6 +15,7 @@ def cloud2depth(
 ) -> Tensor:
     """Project points to the image plane and render their depth map.
     """
+    device: torch.device = point_cloud.device
 
     # project the points to camera reference system
     camera_point_cloud = point_cloud @ camera_parameters["[R | t]"].T
@@ -37,7 +38,7 @@ def cloud2depth(
     z = z[valid_inds]
 
     # draw depth map
-    depth: Tensor = torch.zeros(tuple(size))
+    depth: Tensor = torch.zeros(*tuple(size), device=device)
     depth[y, x] = z
 
     # TODO: make the following faster and in torch
@@ -53,16 +54,18 @@ def cloud2depth(
 
 def depth2cloud(depth_map: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
     """Project depth map to 3D point cloud."""
+    device: torch.device = depth_map.device
 
-    x: Tensor = torch.linspace(0., float(camera_parameters['image_size'][1] - 1), int(2 * camera_parameters['image_size'][1].item()))
-    y: Tensor = torch.linspace(0., float(camera_parameters['image_size'][0] - 1), int(2 * camera_parameters['image_size'][0].item()))
+    x: Tensor = torch.linspace(0., float(camera_parameters['image_size'][1] - 1), int(2 * camera_parameters['image_size'][1].item()), device=device)
+    y: Tensor = torch.linspace(0., float(camera_parameters['image_size'][0] - 1), int(2 * camera_parameters['image_size'][0].item()), device=device)
 
     grid_x, grid_y = torch.meshgrid(x, y, indexing='xy')
 
     x = grid_x.flatten()
     y = grid_y.flatten()
-    z: Tensor = torch.ones(len(x)) #depth_map[y, x]
-
-    p = torch.stack((x, y, torch.ones(len(x))), dim=1)
+    
+    # TODO use bilinear interpolation
+    z: Tensor = depth_map.squeeze()[y.round().long(), x.round().long()]
+    p = torch.stack((x, y, torch.ones(len(x), device=device)), dim=1)
 
     return batched_back_project(camera_parameters, p, z)

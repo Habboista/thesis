@@ -32,10 +32,14 @@ def batched_back_project(camera_parameters: dict[str, Tensor], p: Tensor, Z: Ten
     if len(p.shape) != 2 or p.shape[1] != 3:
         raise ValueError("p expected to be of shape N x 3")
     
-    P = torch.hstack((camera_parameters['K'], torch.zeros((3, 1))))
+    K = camera_parameters['K']
+    device: torch.device = K.device
+    assert p.device == device and Z.device == device
+
+    P = torch.hstack((K, torch.zeros(3, 1, device=device)))
     P_inv = torch.linalg.pinv(P)
     p = p @ P_inv.T # N x 4
-    C = torch.tensor([0., 0., 0., 1.])
+    C = torch.tensor([0., 0., 0., 1.], device=device)
 
     _lambda = (Z * p[..., 3] - p[..., 2]) / (C[None, 2] - Z * C[None, 3]) # N values
 
@@ -47,14 +51,26 @@ def batched_back_project(camera_parameters: dict[str, Tensor], p: Tensor, Z: Ten
     return p
 
 def get_rotation_matrix(x: float, y: float, camera_parameters: dict[str, Tensor]) -> Tensor:
-    """Compute the rotation that the camera has to do for making the pixel at (x, y) the principal point."""
+    """Compute the rotation that the camera has to do for making the pixel at (x, y) the principal point.
+    
+    Args:
+        x: x-coordinate of the pixel (column)
+        y: y-coordinate of the pixel (row)
+        camera_parameters:
+            dict of Tensors describing the camera
+    
+    Returns:
+        The 3x3 rotation matrix as a torch tensor on the same device of the camera parameters
+    """
     # Compute angles of rotation
-    f_x = abs(camera_parameters['K'][0, 0])
-    f_y = abs(camera_parameters['K'][1, 1])
-    py = int(camera_parameters['K'][1, 2])
-    px = int(camera_parameters['K'][0, 2])
-    theta_yz = np.arctan2(y - py, f_y)
-    theta_xz = np.arctan2(x - px, f_x)
+    K = camera_parameters['K']
+    device = K.device
+    f_x: float = abs(K[0, 0].item())
+    f_y: float = abs(K[1, 1].item())
+    py: float = K[1, 2].item()
+    px: float = K[0, 2].item()
+    theta_yz: float = np.arctan2(y - py, f_y)
+    theta_xz: float = np.arctan2(x - px, f_x)
     
     # Rotation matrices
     R_yz = torch.tensor([
@@ -62,18 +78,25 @@ def get_rotation_matrix(x: float, y: float, camera_parameters: dict[str, Tensor]
         [0,     np.cos(theta_yz),    np.sin(theta_yz), 0],
         [0,    -np.sin(theta_yz),    np.cos(theta_yz), 0],
         [0,                    0,                   0, 1],
-    ], dtype=torch.float32)
+    ], dtype=torch.float32, device=device)
     R_xz = torch.tensor([
         [ np.cos(theta_xz), 0,    np.sin(theta_xz), 0],
         [                0, 1,                   0, 0],
         [-np.sin(theta_xz), 0,    np.cos(theta_xz), 0],
         [                0, 0,                   0, 1],
-    ], dtype=torch.float32)
+    ], dtype=torch.float32, device=device)
+    
     R: Tensor = R_yz @ R_xz
-
     return R
 
 def get_start_and_end_points(R: Tensor, camera_parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
+    # Camera matrix (3x4)
+    K = camera_parameters['K']
+    assert K.device == R.device, f"R and K must be on the same device, got {K.device} and {R.device}"
+    device = K.device
+
+    P = torch.hstack((K, torch.zeros(3, 1, device=device)))
+
     # Arbitrary points in space for computing the homography
     # They just need to be a homogeneous reference system
     # i.e. each three of them is a group of independent vectors
@@ -84,10 +107,7 @@ def get_start_and_end_points(R: Tensor, camera_parameters: dict[str, Tensor]) ->
         [-offset,  offset, offset*10., 1.],
         [ offset, -offset, offset*10., 1.],
         [ offset,  offset, offset*10., 1.],
-    ])
-
-    # Camera matrix (3x4)
-    P = torch.hstack((camera_parameters['K'], torch.zeros(3, 1)))
+    ], device=device)
 
     # Points projected in warped image
     end_points = corners @ P.T
