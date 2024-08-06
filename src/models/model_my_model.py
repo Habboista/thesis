@@ -10,8 +10,8 @@ from .model_eigen import CoarseFine
 from ..data.transforms import scale_through_depth, center_crop_through_camera, cloud2depth, depth2cloud, warp
 from ..data.patch_samplers import blur, get_blur_weight_mask, clean_corner_response
 
-class MyModel(Model):
-    def __init__(self, blur: bool, num_epochs: int):
+class MyModel:
+    def __init__(self, model: Model, blur: bool, num_epochs: int):
         super().__init__()
         self.base_model = CoarseFine(coarse_size=(32, 32))
         self.blur: bool = blur
@@ -27,22 +27,15 @@ class MyModel(Model):
     def _predict(self, image: Tensor, camera_parameters: dict[str, Tensor], model: Model) -> list[Tensor]:
         # Detect points of interest
         print("Detecting points of interest...")
-        np_image = image.permute(1, 2, 0).cpu().numpy()
-        np_corner_response = skimage.feature.corner_moravec(skimage.color.rgb2gray(np_image))
-
-        np_corner_response = clean_corner_response(np_corner_response)
-
-        # Sample peaks of interest
-        peaks = skimage.feature.corner_peaks(np_corner_response, min_distance=25) # (row, column)
-        points_of_interest = peaks
+        points_of_interest: Tensor = self.detect_points_of_interest(image)
         print(f"Found {points_of_interest.shape[0]} points of interest")
 
         h: int = 150
         w: int = 150
 
         depth_list: list[Tensor] = []
-        for x, y in points_of_interest:
-            print(f"\nWorking on point ({x}, {y})")
+        for y, x in points_of_interest:
+            print(f"\nWorking on point (x={x}, y={y})")
 
             # Warp and crop
             print("Warp and crop...")
@@ -60,6 +53,7 @@ class MyModel(Model):
 
             # Unwarp
             print("Unwarp...")
+            depth = depth[0]
             cloud = depth2cloud(depth, c_w_camera_parameters)
             depth = cloud2depth(cloud, camera_parameters)
 
@@ -68,15 +62,17 @@ class MyModel(Model):
         return depth_list
     
     def _compute_loss(self, preds: list[Tensor], first_preds: list[Tensor]) -> Tensor:
-        loss: Tensor = torch.tensor(0.).to('cuda')
-        reg: Tensor = torch.tensor(0.).to('cuda')
+        loss: Tensor = torch.tensor(0., requires_grad=True, device='cuda')
+        reg: Tensor = torch.tensor(0., requires_grad=True, device='cuda')
         masks = [depth > 0 for depth in preds]
         for i in range(len(preds)):
             for j in range(len(preds)):
                 if i == j:
-                    reg = reg + torch.mean(self.weight * (preds[i][masks[i]] - first_preds[i][masks[i]])**2)
+                    # TODO use self.weight
+                    reg = reg + torch.mean((preds[i][masks[i]] - first_preds[i][masks[i]])**2)
                 else:
-                    loss = loss + torch.mean((preds[i][masks[i]] - preds[j][masks[j]])**2)
+                    m = masks[i] & masks[j]
+                    loss = loss + torch.mean((preds[i][m] - preds[j][m])**2)
         loss = loss + reg
         return loss
     
@@ -91,46 +87,65 @@ class MyModel(Model):
             with torch.no_grad():
                 for param in model.parameters():
                     param.data -= 0.1 * param.grad
-        
+    
+    def detect_points_of_interest(self, image: Tensor) -> Tensor:
+        device: torch.device = image.device
+
+        np_image = image.permute(1, 2, 0).cpu().numpy()
+        np_corner_response = skimage.feature.corner_moravec(skimage.color.rgb2gray(np_image))
+
+        np_corner_response = clean_corner_response(np_corner_response)
+
+        # Sample peaks of interest
+        peaks = skimage.feature.corner_peaks(np_corner_response, min_distance=15)[:20, :] # (row, column)
+
+        return torch.from_numpy(peaks).to(device)
+
     def _forward(self, x: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
         device: torch.device = x.device
         print("Working on device:", device)
         self.to(device)
-
-        if self.training:
-            return self.base_model(x, camera_parameters)
-
-        # Work with a copy of the base model
-        model: Model = self._copy_model(device)
-
-        # Unbatch (Expected batch of size 1)
-        print("Unbatching...")
-        assert len(x.shape) == 4, "Expected input of shape 1 x 3 x H x W"
-        assert x.shape[0] == 1, "Expected input of shape 1 x 3 x H x W"
-        image = x[0]
-        #for k in camera_parameters:
-        #    print(camera_parameters[k].shape)
-        #    camera_parameters[k] = camera_parameters[k][0]
-
-        print("Computing the first predictions...")
-        with torch.no_grad():
-            first_preds: list[Tensor] = self._predict(image, camera_parameters, self.base_model)
-
-        # Fine tune the network
-        print("Fine-tuining before blending...")
-        self.fine_tune(model, camera_parameters, image, first_preds)
-
-        # Blend
-        print("\nComputing the final predictions...")
-        model.eval()
-        with torch.no_grad():
-            preds = self._predict(image, camera_parameters, model) # linear-scale
         
-        print("Blending...")
-        stacked_preds: Tensor = torch.stack(preds)
-        stacked_preds[stacked_preds <= 0] = torch.nan
+        
+        if self.training:
+            # TRAINING
+            
+            return self.base_model(x, camera_parameters)
+        else:
+            # INFERENCING
 
-        result = stacked_preds.nanmean(0).unsqueeze(0)
-        result[result.isnan()] = 1e-3
+            # Work with a copy of the base model
+            model: Model = self._copy_model(device)
 
-        return result
+            # Unbatch (Expected batch of size 1)
+            print("Unbatching...")
+            assert len(x.shape) == 4, "Expected input of shape 1 x 3 x H x W"
+            assert x.shape[0] == 1, "Expected input of shape 1 x 3 x H x W"
+            image = x[0]
+            for k in camera_parameters:
+                camera_parameters[k] = camera_parameters[k][0]
+
+            # Compute the first predictions
+            print("Computing the first predictions...")
+            with torch.no_grad():
+                first_preds: list[Tensor] = self._predict(image, camera_parameters, self.base_model)
+
+            # Fine tune the network
+            print("Fine-tuining before blending...")
+            self.fine_tune(model, camera_parameters, image, first_preds)
+
+            # Compute the final predictions
+            print("\nComputing the final predictions...")
+            model.eval()
+            with torch.no_grad():
+                preds = self._predict(image, camera_parameters, model) # linear-scale
+            
+            # Blend
+            print("Blending...")
+            stacked_preds: Tensor = torch.stack(preds)
+            stacked_preds[stacked_preds <= 0] = torch.nan
+
+            result = stacked_preds.nanmean(0).unsqueeze(0)
+            result[result.isnan() | (result <= 0)] = 1e-3
+
+            return result

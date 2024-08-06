@@ -65,10 +65,10 @@ def get_rotation_matrix(x: float, y: float, camera_parameters: dict[str, Tensor]
     # Compute angles of rotation
     K = camera_parameters['K']
     device = K.device
-    f_x: float = abs(K[0, 0].item())
-    f_y: float = abs(K[1, 1].item())
-    py: float = K[1, 2].item()
-    px: float = K[0, 2].item()
+    f_x: float = abs(K[0, 0].cpu().item())
+    f_y: float = abs(K[1, 1].cpu().item())
+    py: float = K[1, 2].cpu().item()
+    px: float = K[0, 2].cpu().item()
     theta_yz: float = np.arctan2(y - py, f_y)
     theta_xz: float = np.arctan2(x - px, f_x)
     

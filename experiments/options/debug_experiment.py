@@ -3,7 +3,7 @@ from src.losses import Loss
 from src.data.augmenters import Augmenter
 from src.data.patch_samplers import PatchSampler
 
-from src.models import MyModel
+from src.models import CoarseFine
 from src.losses import ScaleInvariantLoss
 
 from src.data.augmenters import MyAugmenter
@@ -36,7 +36,7 @@ lr: float = 1e-4
 criterion: Loss = ScaleInvariantLoss()
 
 # Model
-model: Model = MyModel()
+model: Model = CoarseFine((32, 32))
 
 # Data manipulation options
 train_augmenter: Augmenter = MyAugmenter(

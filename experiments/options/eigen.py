@@ -41,7 +41,7 @@ lr: float = 1e-4
 criterion: Loss = ScaleInvariantLoss()
 
 # Model
-model: Model = CoarseFine()
+model: Model = CoarseFine((27, 142))
 
 # Data manipulation options
 train_augmenter: Augmenter = EigenAugmenter()

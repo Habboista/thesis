@@ -55,6 +55,7 @@ def cloud2depth(
 def depth2cloud(depth_map: Tensor, camera_parameters: dict[str, Tensor]) -> Tensor:
     """Project depth map to 3D point cloud."""
     device: torch.device = depth_map.device
+    depth_map = depth_map.squeeze(0)
 
     x: Tensor = torch.linspace(0., float(camera_parameters['image_size'][1] - 1), int(2 * camera_parameters['image_size'][1].item()), device=device)
     y: Tensor = torch.linspace(0., float(camera_parameters['image_size'][0] - 1), int(2 * camera_parameters['image_size'][0].item()), device=device)
@@ -65,7 +66,7 @@ def depth2cloud(depth_map: Tensor, camera_parameters: dict[str, Tensor]) -> Tens
     y = grid_y.flatten()
     
     # TODO use bilinear interpolation
-    z: Tensor = depth_map.squeeze()[y.round().long(), x.round().long()]
+    z: Tensor = depth_map[y.round().long(), x.round().long()]
     p = torch.stack((x, y, torch.ones(len(x), device=device)), dim=1)
 
     return batched_back_project(camera_parameters, p, z)

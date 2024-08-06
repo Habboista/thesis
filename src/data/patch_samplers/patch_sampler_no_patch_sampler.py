@@ -20,4 +20,4 @@ class NoPatchSampler(PatchSampler):
             k: torch.stack([param[k] for param in camera_parameters_list])
             for k in camera_parameters.keys()
         }
-        return image.unsqueeze(0), depth_map.unsqueeze(0), camera_parameters
+        return image.unsqueeze(0), depth_map.unsqueeze(0), batched_camera_parameters
