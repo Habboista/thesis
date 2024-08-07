@@ -7,7 +7,7 @@ from src.models import CoarseFine
 from src.losses import ScaleInvariantLoss
 
 from src.data.augmenters import MyAugmenter
-from src.data.patch_samplers import MyPatchSampler
+from src.data.patch_samplers import CameraPreservingSampler
 
 __all__ = [
     'kitti_path',
@@ -40,24 +40,22 @@ model: Model = CoarseFine((32, 32))
 
 # Data manipulation options
 train_augmenter: Augmenter = MyAugmenter()
-train_patch_sampler: PatchSampler = MyPatchSampler(
+train_patch_sampler: PatchSampler = CameraPreservingSampler(
     color_jittering=True,
     hflip=True,
     scaling_range=(1., 1.),
     batch_size=8,
-    blur=True,
-    half_h=80,
-    half_w=80,
-    corner_sampling=True,
+    blur=False,
+    h=150,
+    w=150,
 )
 val_augmenter: Augmenter = MyAugmenter()
-val_patch_sampler: PatchSampler = MyPatchSampler(
+val_patch_sampler: PatchSampler = CameraPreservingSampler(
     color_jittering=False,
     hflip=False,
     scaling_range=(1., 1.),
     batch_size=1,
-    blur=True,
-    half_h=80,
-    half_w=80,
-    corner_sampling=True,
+    blur=False,
+    h=150,
+    w=150,
 )

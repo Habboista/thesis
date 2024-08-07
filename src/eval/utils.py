@@ -9,6 +9,7 @@ def get_metrics(pred_depth: Tensor, gt_depth: Tensor) -> dict[str, float]:
     MIN_DEPTH = 1e-3
     MAX_DEPTH = 80
     mask = (gt_depth > MIN_DEPTH) & (gt_depth < MAX_DEPTH)
+    mask = mask & (pred_depth > 0.) # Not present in original evaluation code
 
     # Evaluate only center crop (following Eigen et al.)
     gt_height, gt_width = gt_depth.shape[-2:]

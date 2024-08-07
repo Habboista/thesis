@@ -48,4 +48,5 @@ class CoarseFine(Model):
         coarse_map = self.coarse(x)
         fine_map = self.fine(x, coarse_map)
         fine_map = nn.functional.interpolate(fine_map, size=x.shape[-2:], mode='nearest')
+        
         return torch.exp(fine_map) if not self.training else fine_map

@@ -136,10 +136,6 @@ def warp(
     """Given a point (x, y) applies perspective transform to both the image and the point cloud
     so that the point matches the central point (defined by px, py parameters of the camera) of the image.
     """
-    assert image.device == camera_parameters['[R | t]'].device, f"image and camera_parameters must be on the same device" \
-        f"got {image.device} and {camera_parameters['[R | t]'].device}"
-    device: torch.device = image.device
-    
     out_camera_parameters: dict[str, Tensor] = copy_camera_parameters(camera_parameters)
 
     # Compute rotation matrix
@@ -149,7 +145,7 @@ def warp(
     start_points, end_points = get_start_and_end_points(R, out_camera_parameters)
 
     # Warp image
-    out_image = F.perspective(image.cpu(), start_points.cpu(), end_points.cpu(), interpolation=interpolation).to(device)
+    out_image = F.perspective(image, start_points, end_points, interpolation=interpolation)
 
     # Adjust camera parameters
     out_camera_parameters['[R | t]'] = \

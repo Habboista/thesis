@@ -34,7 +34,6 @@ class EigenPatchSampler(PatchSampler):
         flip = random.random() > 0.5
         if flip:
             image, camera_parameters = horizontal_flip_through_camera(image, camera_parameters)
-        
 
         # Scaling
         s = random.uniform(1., 1.2)
