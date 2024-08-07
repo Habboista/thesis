@@ -17,5 +17,4 @@ class TestAugmenter(Augmenter):
         self, image: Tensor, point_cloud: Tensor, camera_parameters: dict[str, Tensor]
     ) -> tuple[Tensor, Tensor, dict[str, Tensor]]:
         
-        image, camera_parameters = scale_through_camera(image, camera_parameters, 0.5)
         return image, point_cloud, camera_parameters

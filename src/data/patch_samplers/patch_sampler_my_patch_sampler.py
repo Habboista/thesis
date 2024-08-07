@@ -13,10 +13,15 @@ from ..transforms import cloud2depth
 from ..transforms import warp
 from ..transforms import blur
 from ..transforms import center_crop_through_camera
+from ..transforms import horizontal_flip_through_camera
+from ..transforms import scale_through_depth
 
 class MyPatchSampler(PatchSampler):
     def __init__(
             self,
+            color_jittering: bool,
+            hflip: bool,
+            scaling_range: tuple[float, float],
             batch_size: int,
             blur: bool,
             half_h: int,
@@ -29,9 +34,29 @@ class MyPatchSampler(PatchSampler):
         self.blur = blur
         self.corner_sampling = corner_sampling
 
+        self.color_jittering = color_jittering
+        self.hflip = hflip
+        self.scaling_range = scaling_range
+
+        self.color_jitter = T.Compose([
+            T.ColorJitter(0.1, 0.1, 0.1, 0.),
+        ])
+
     def _call(
         self, image: Tensor, point_cloud: Tensor, camera_parameters: dict[str, Tensor]
     ) -> tuple[Tensor, Tensor, dict[str, Tensor]]:
+        # Color jittering
+        if self.color_jittering:
+            image = self.color_jitter(image)
+
+        # Horizontal Flip
+        flip = random.random() > 0.5
+        if self.hflip and flip:
+            image, camera_parameters = horizontal_flip_through_camera(image, camera_parameters)
+        
+        # Scaling by s
+        s = random.uniform(*self.scaling_range)
+        image, camera_parameters = scale_through_depth(image, camera_parameters, s)
 
         # Sample points of interest and warp the image and depth centering them
         if not self.corner_sampling:

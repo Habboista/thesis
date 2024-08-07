@@ -2,7 +2,7 @@ from torch import Tensor
 import torchvision.transforms.functional as F
 
 from ._patch_sampler_abstract import PatchSampler
-from ..transforms import cloud2depth
+from ..transforms import cloud2depth, scale_through_camera
 
 class TestPatchSampler(PatchSampler):
     def __init__(self):
@@ -11,6 +11,9 @@ class TestPatchSampler(PatchSampler):
     def _call(
         self, image: Tensor, point_cloud: Tensor, camera_parameters: dict[str, Tensor]
     ) -> tuple[Tensor, Tensor, dict[str, Tensor]]:
+        
+        image, camera_parameters = scale_through_camera(image, camera_parameters, 0.5)
+
         # project point cloud to image
         depth_map: Tensor = cloud2depth(point_cloud, camera_parameters)
 

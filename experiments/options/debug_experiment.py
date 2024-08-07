@@ -39,24 +39,22 @@ criterion: Loss = ScaleInvariantLoss()
 model: Model = CoarseFine((32, 32))
 
 # Data manipulation options
-train_augmenter: Augmenter = MyAugmenter(
+train_augmenter: Augmenter = MyAugmenter()
+train_patch_sampler: PatchSampler = MyPatchSampler(
     color_jittering=True,
     hflip=True,
     scaling_range=(1., 1.),
-)
-train_patch_sampler: PatchSampler = MyPatchSampler(
     batch_size=8,
     blur=True,
     half_h=80,
     half_w=80,
     corner_sampling=True,
 )
-val_augmenter: Augmenter = MyAugmenter(
+val_augmenter: Augmenter = MyAugmenter()
+val_patch_sampler: PatchSampler = MyPatchSampler(
     color_jittering=False,
     hflip=False,
     scaling_range=(1., 1.),
-)
-val_patch_sampler: PatchSampler = MyPatchSampler(
     batch_size=1,
     blur=True,
     half_h=80,
