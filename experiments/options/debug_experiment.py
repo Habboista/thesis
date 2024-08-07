@@ -31,7 +31,7 @@ experiment_name: str = __name__.split('.')[-1]
 
 # Training options
 num_epochs: int = 10
-batch_size: int = 1
+batch_size: int = 8
 lr: float = 1e-4
 criterion: Loss = ScaleInvariantLoss()
 
@@ -42,10 +42,10 @@ model: Model = CoarseFine((32, 32))
 train_augmenter: Augmenter = MyAugmenter(
     color_jittering=True,
     hflip=True,
-    scaling_range=(0.5, 1.),
+    scaling_range=(1., 1.),
 )
 train_patch_sampler: PatchSampler = MyPatchSampler(
-    batch_size=16,
+    batch_size=8,
     blur=True,
     half_h=80,
     half_w=80,
