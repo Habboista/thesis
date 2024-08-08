@@ -14,6 +14,9 @@ def cloud2depth(
     point_cloud: Tensor, camera_parameters: dict[str, Tensor]
 ) -> Tensor:
     """Project points to the image plane and render their depth map.
+
+    Returns:
+        depth map of shape (1, H, W) 
     """
     # Work only on cpu
     assert point_cloud.device == torch.device('cpu')

@@ -51,7 +51,7 @@ class Info:
             return 0.
         return sum(self.info[epoch][key]) / len(self.info[epoch][key])
 
-    def save_epoch(self, epoch: int, filename: str) -> None:
+    def save_epoch(self, epoch: int, filename: str) -> None:    
         path = os.path.join(self.dir_path, filename)
         with open(path, 'w') as f:
             json.dump(self.info[epoch], f, indent=4)
@@ -72,6 +72,17 @@ class Info:
         for k, v in self.info[epoch].items():
             print(f"\t{k}: {sum(v) / len(v):.3f}")
         print()
+
+    def save_epoch_summary(self, epoch: int, filename: str) -> None:
+        summary = dict()
+        for k, v in self.info[epoch].items():
+            summary[k] = sum(v) / len(v)
+        path = os.path.join(self.dir_path, filename)
+        with open(path, 'w') as f:
+            json.dump(summary, f, indent=4)
+    
+    def save_last_epoch_summary(self, filename: str) -> None:
+        self.save_epoch_summary(-1, filename)
 
     def print_last_epoch_summary(self) -> None:
         self.print_epoch_summary(-1)

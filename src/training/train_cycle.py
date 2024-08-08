@@ -46,3 +46,4 @@ def train_cycle(
         torch.save(model.state_dict(), os.path.join(checkpoints_dir, f'model_{epoch}.pth'))
         training_info.save_last_epoch(f'training_info_{epoch}.json')
         val_info.save_last_epoch(f'val_info_{epoch}.json')
+        val_info.save_last_epoch_summary(f'val_info_summary_{epoch}.json')

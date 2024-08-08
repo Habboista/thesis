@@ -20,6 +20,9 @@ def eval(
 
     with torch.no_grad():
         for image, depth_map, camera_parameters in tqdm(dataset):
+            # image 1 x 3 x H x W
+            # depth_map 1 x 1 x H x W
+
             # convert to cuda
             image = image.to('cuda')
             depth_map = depth_map.to('cuda')
@@ -36,12 +39,16 @@ def eval_pipeline(
         max_num_patches: int,
         num_epochs: int,
         lr: float,
-        val_info: Info,
+        eval_info: Info,
 ) -> None:
     model.to('cuda')
     model.eval()
 
+    eval_info.new_epoch()
     for image, depth_map, camera_parameters in tqdm(dataset):
+        # image 1 x 3 x H x W
+        # depth_map 1 x 1 x H x W
+
         # convert to cuda
         #image = image.to('cuda')
         #depth_map = depth_map.to('cuda')
@@ -51,4 +58,5 @@ def eval_pipeline(
         # predict
         pred: Tensor = infer(image, camera_parameters, model, patch_sampler, max_num_patches, num_epochs, lr)
     
-        val_info.log_info(get_metrics(pred, depth_map))
+        eval_info.log_info(get_metrics(pred, depth_map))
+    eval_info.print_last_epoch_summary()

@@ -34,24 +34,25 @@ def main():
     info_dir = os.path.join(experiment_dir, 'info')
 
     # Setup
-    assert torch.cuda.is_available(), 'CUDA is not available.'
-    assert os.path.isdir(kitti_path), f'Directory {kitti_path} does not exist.'
-    print("Make sure to run the corresponding experiment first")
-    assert os.path.isdir(experiment_dir), f'Directory {experiment_dir} does not exist.'
-    assert os.path.isdir(checkpoints_dir), f'Directory {checkpoints_dir} does not exist.'
-    assert os.path.isdir(info_dir), f'Directory {info_dir} does not exist.'
+    #assert torch.cuda.is_available(), 'CUDA is not available.'
+    #assert os.path.isdir(kitti_path), f'Directory {kitti_path} does not exist.'
+    #print("Make sure to run the corresponding experiment first")
+    #assert os.path.isdir(experiment_dir), f'Directory {experiment_dir} does not exist.'
+    #assert os.path.isdir(checkpoints_dir), f'Directory {checkpoints_dir} does not exist.'
+    #assert os.path.isdir(info_dir), f'Directory {info_dir} does not exist.'
 
     # Load checkpoint
-    print("Looking for a checkpoint...")
-    checkpoints = os.listdir(checkpoints_dir)
-    if len(checkpoints) > 0:
-        checkpoints.sort()
-        checkpoint_path = os.path.join(checkpoints_dir, checkpoints[-1])
-        print(f"Checkpoint {checkpoints[-1]} found, loading it.\n")
-        model.load_state_dict(torch.load(checkpoint_path))
-    else:
-        print("No checkpoint found.\n")
-        exit()
+    #print("Looking for a checkpoint...")
+    #checkpoints = os.listdir(checkpoints_dir)
+    #if len(checkpoints) > 0:
+    #    checkpoints.sort()
+    #    checkpoint_path = os.path.join(checkpoints_dir, checkpoints[-1])
+    #    print(f"Checkpoint {checkpoints[-1]} found, loading it.\n")
+    #    model.load_state_dict(torch.load(checkpoint_path))
+    #else:
+    #    print("No checkpoint found.\n")
+    #    exit()
+
 
     model = model.to('cuda')
 

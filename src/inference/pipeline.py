@@ -41,13 +41,13 @@ def infer(
 
     batch_result: list[Tensor] = []
     for b in range(batch_size):
-        image: Tensor = batch_image[b]
+        image: Tensor = batch_image[b] # 3 x H x W
         camera_parameters: dict[str, Tensor] = dict()
         for k in batch_camera_parameters.keys():
             camera_parameters[k] = batch_camera_parameters[k][b]
 
         # Work with a copy of the model
-        model = copy_model(model).cuda()
+        model = copy_model(model).cpu()
 
         # Get patches to be used for inference
         samples = patch_sampler.sample_patches(image, camera_parameters)[:max_num_patches]
@@ -69,14 +69,14 @@ def infer(
 
         # Blend partial predictions
         batch_result.append(blend(pred_list))
-    
+ 
     return torch.stack(batch_result)
 
 def blend(preds: list[Tensor]) -> Tensor:
-    stacked_preds: Tensor = torch.stack(preds)
+    stacked_preds: Tensor = torch.stack(preds) # N x 1 x H x W
     stacked_preds[stacked_preds <= 0] = torch.nan
 
-    result = stacked_preds.nanmean(0).unsqueeze(0)
+    result = stacked_preds.nanmean(0) # 1 x H x W
     result[result.isnan() | (result <= 0)] = 1e-3
 
     return result
@@ -159,19 +159,24 @@ def batch_predict(
     pred_list: list[Tensor] = []
 
     for patch, camera_parameters in zip(patch_list, patch_camera_parameters_list):
-        patch = patch.to('cuda')
+        # patch 3 x H x W
+        patch = patch.to('cpu')
+
         # Predict
         pred: Tensor
         if model.training: # Model behaviour change based on training mode, I want linear scale output
             pred = torch.exp(model(patch[None], camera_parameters))[0] # log to linear
         else:
-            pred = model(patch[None], camera_parameters)[0] # already in linear
+            pred = model(patch[None], camera_parameters)[0] # already in linearù
+
+        # pred 1 x H x W
         pred = pred.cpu()
 
         # Unwarp back to original image plane
         cloud = depth2cloud(pred, camera_parameters)
         pred = cloud2depth(cloud, original_camera_parameters)
-    
+
+        # pred 1 x H x W
         pred_list.append(pred)
     
     return pred_list
